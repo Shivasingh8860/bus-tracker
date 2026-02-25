@@ -94,7 +94,6 @@ const AdminDashboard = () => {
             <div className="flex justify-between items-center mb-4">
                 <div>
                     <h1 className="title-gradient" style={{ fontSize: '2rem' }}>Command Center</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage your fleet, drivers, and routes</p>
                 </div>
 
                 <div className="flex gap-4">
@@ -162,9 +161,6 @@ const AdminDashboard = () => {
 
                     <form onSubmit={addRoute} className="flex flex-col gap-3 mb-6" style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px' }}>
                         <div style={{ paddingBottom: '0.5rem' }}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <MapPin size={14} color="var(--accent)" /> Mode: {routeWaypoints.length === 0 ? "Select Start Position" : routeWaypoints.length === 1 ? "Select End Position" : "Done (Click Map to Reset)"}
-                            </p>
 
                             <div className="flex gap-2 mb-3">
                                 <input

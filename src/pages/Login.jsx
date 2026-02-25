@@ -65,11 +65,6 @@ const Login = () => {
                     <h2 className="title-gradient">
                         {role === 'driver' ? 'Driver Authentication' : 'Admin Login'}
                     </h2>
-                    <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-                        {role === 'driver'
-                            ? 'Enter your Driver ID and assigned password'
-                            : 'Enter admin credentials (admin / admin123)'}
-                    </p>
                 </div>
 
                 {error && (

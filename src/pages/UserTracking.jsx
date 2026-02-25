@@ -18,7 +18,6 @@ const UserTracking = () => {
                     <h1 className="title-gradient" style={{ fontSize: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <Compass size={32} color="var(--primary)" /> Live Transit
                     </h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Real-time GPS tracking for your campus commute</p>
                 </div>
 
                 <div className="glass-card flex items-center gap-3" style={{ padding: '0.75rem 1.25rem', borderRadius: '30px' }}>
@@ -86,15 +85,6 @@ const UserTracking = () => {
                                 )
                             })}
                         </div>
-                    </div>
-
-                    <div className="glass-card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)' }}>
-                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-                            <Info size={16} color="var(--accent)" /> Quick Setup Note
-                        </h4>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                            To test the tracking feature, login to the <strong>Driver Access</strong> using simulated GPS. The bus will start moving automatically along the path shown here!
-                        </p>
                     </div>
 
                 </motion.div>
