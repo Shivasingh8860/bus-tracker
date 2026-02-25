@@ -56,18 +56,30 @@ export const BusesProvider = ({ children }) => {
 
     // Intercept state changes and push to Supabase
     const addDriverToDB = async (driver) => {
-        setDrivers(prev => [...prev, driver]);
-        await supabase.from('drivers').insert([driver]);
+        const { error } = await supabase.from('drivers').insert([driver]);
+        if (!error) {
+            setDrivers(prev => [...prev, driver]);
+        } else {
+            console.error("Error adding driver to Supabase:", error);
+            alert("Database Error! Failed to insert driver.");
+        }
     };
 
     const removeDriverFromDB = async (id) => {
-        setDrivers(prev => prev.filter(d => d.id !== id));
-        await supabase.from('drivers').delete().eq('id', id);
+        const { error } = await supabase.from('drivers').delete().eq('id', id);
+        if (!error) {
+            setDrivers(prev => prev.filter(d => d.id !== id));
+        }
     };
 
     const addRouteToDB = async (route) => {
-        setRoutes(prev => [...prev, route]);
-        await supabase.from('routes').insert([route]);
+        const { error } = await supabase.from('routes').insert([route]);
+        if (!error) {
+            setRoutes(prev => [...prev, route]);
+        } else {
+            console.error("Error adding route to Supabase:", error);
+            alert("Database Error! Failed to insert route.");
+        }
     };
 
     const updateBusLocation = async (driverId, lat, lng, routeId) => {
