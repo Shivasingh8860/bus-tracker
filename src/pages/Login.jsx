@@ -93,7 +93,6 @@ const Login = () => {
                             <UserCircle size={20} color="var(--text-muted)" style={{ position: 'absolute', top: '12px', left: '12px' }} />
                             <input
                                 type="text"
-                                placeholder={role === 'driver' ? "D100" : "admin"}
                                 style={{ paddingLeft: '2.5rem' }}
                                 value={userId}
                                 onChange={(e) => setUserId(e.target.value)}
