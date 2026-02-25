@@ -34,7 +34,7 @@ function MapSelector({ waypoints, setWaypoints }) {
 }
 
 const AdminDashboard = () => {
-    const { drivers, setDrivers, routes, setRoutes, activeBuses } = useBuses();
+    const { drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, routes, addRoute: handleAddRouteDB, activeBuses } = useBuses();
 
     const [newDriver, setNewDriver] = useState({ id: '', name: '', busNumber: '', password: '' });
     const [newRoute, setNewRoute] = useState({ id: '', name: '' });
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
     const addDriver = (e) => {
         e.preventDefault();
         if (!newDriver.id || !newDriver.name || !newDriver.busNumber || !newDriver.password) return;
-        setDrivers([...drivers, newDriver]);
+        handleAddDriverDB(newDriver);
         setNewDriver({ id: '', name: '', busNumber: '', password: '' });
     };
 
@@ -79,13 +79,13 @@ const AdminDashboard = () => {
             alert("Please click on the map to select both a Starting Position and an Ending Position.");
             return;
         }
-        setRoutes([...routes, { ...newRoute, waypoints: routeWaypoints }]);
+        handleAddRouteDB({ ...newRoute, waypoints: routeWaypoints });
         setNewRoute({ id: '', name: '' });
         setRouteWaypoints([]);
     };
 
     const removeDriver = (id) => {
-        setDrivers(drivers.filter(d => d.id !== id));
+        handleRemoveDriverDB(id);
     };
 
     return (

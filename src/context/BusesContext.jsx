@@ -99,8 +99,8 @@ export const BusesProvider = ({ children }) => {
 
     return (
         <BusesContext.Provider value={{
-            routes, setRoutes: addRouteToDB,
-            drivers, setDrivers: (d) => { if (Array.isArray(d)) { } else { addDriverToDB(d) } }, // basic bridge
+            routes, addRoute: addRouteToDB,
+            drivers, addDriver: addDriverToDB,
             removeDriver: removeDriverFromDB,
             activeBuses, updateBusLocation, stopBusTracking
         }}>
