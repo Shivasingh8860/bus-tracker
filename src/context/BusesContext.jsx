@@ -13,7 +13,12 @@ export const BusesProvider = ({ children }) => {
         // Fetch Initial Data
         const fetchData = async () => {
             const { data: dData } = await supabase.from('drivers').select('*');
-            if (dData) setDrivers(dData);
+            if (dData) {
+                setDrivers(dData.map(d => ({
+                    ...d,
+                    busNumber: d.busnumber || d.busNumber
+                })));
+            }
 
             const { data: rData } = await supabase.from('routes').select('*');
             if (rData) setRoutes(rData);
@@ -56,7 +61,13 @@ export const BusesProvider = ({ children }) => {
 
     // Intercept state changes and push to Supabase
     const addDriverToDB = async (driver) => {
-        const { error } = await supabase.from('drivers').insert([driver]);
+        const payload = {
+            id: driver.id,
+            name: driver.name,
+            busnumber: driver.busNumber,
+            password: driver.password
+        };
+        const { error } = await supabase.from('drivers').insert([payload]);
         if (!error) {
             setDrivers(prev => [...prev, driver]);
         } else {
