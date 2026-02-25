@@ -13,7 +13,7 @@ const UserTracking = () => {
     return (
         <div className="flex flex-col gap-6" style={{ minHeight: '80vh', position: 'relative' }}>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
+            <div className="header-responsive mb-2">
                 <div>
                     <h1 className="title-gradient" style={{ fontSize: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <Compass size={32} color="var(--primary)" /> Live Transit
@@ -30,7 +30,7 @@ const UserTracking = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-[1fr] md:grid-cols-[1fr_300px] gap-6" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px' }}>
+            <div className="layout-sidebar">
 
                 {/* Main Map View */}
                 <motion.div

@@ -91,12 +91,12 @@ const AdminDashboard = () => {
     return (
         <div className="grid grid-cols-[1fr] gap-6" style={{ minHeight: '80vh', maxWidth: '1000px', margin: '0 auto' }}>
 
-            <div className="flex justify-between items-center mb-4">
+            <div className="header-responsive mb-4">
                 <div>
                     <h1 className="title-gradient" style={{ fontSize: '2rem' }}>Command Center</h1>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4">
                     <div className="glass-card flex items-center gap-4" style={{ padding: '1rem', minWidth: '150px' }}>
                         <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '0.75rem', borderRadius: '50%' }}>
                             <Bus size={24} color="var(--primary)" />
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))' }}>
+            <div className="layout-equal">
 
                 {/* Drivers Section */}
                 <motion.div className="glass-card" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -127,11 +127,11 @@ const AdminDashboard = () => {
                     </h3>
 
                     <form onSubmit={addDriver} className="flex flex-col gap-3 mb-6" style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px' }}>
-                        <div className="grid grid-cols-2 gap-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="form-grid">
                             <input type="text" placeholder="ID (e.g. D102)" value={newDriver.id} onChange={e => setNewDriver({ ...newDriver, id: e.target.value })} required />
                             <input type="text" placeholder="Full Name" value={newDriver.name} onChange={e => setNewDriver({ ...newDriver, name: e.target.value })} required />
                         </div>
-                        <div className="grid grid-cols-2 gap-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                        <div className="form-grid">
                             <input type="text" placeholder="Bus Registration No." value={newDriver.busNumber} onChange={e => setNewDriver({ ...newDriver, busNumber: e.target.value })} required />
                             <input type="password" placeholder="Assign Password" value={newDriver.password} onChange={e => setNewDriver({ ...newDriver, password: e.target.value })} required />
                         </div>

@@ -87,7 +87,7 @@ const DriverDashboard = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
             >
-                <div className="flex justify-between items-center mb-6 border-b" style={{ paddingBottom: '1rem', borderColor: 'var(--panel-border)' }}>
+                <div className="header-responsive mb-6 border-b" style={{ paddingBottom: '1rem', borderColor: 'var(--panel-border)' }}>
                     <div>
                         <h2 className="title-gradient">Driver Terminal</h2>
                         <p style={{ color: 'var(--text-muted)' }}>ID: {user.id} | Bus: {user.busNumber}</p>
@@ -125,7 +125,7 @@ const DriverDashboard = () => {
                         <h4 style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <MapPin size={18} color="var(--accent)" /> Current Location
                         </h4>
-                        <div className="mt-2 grid grid-cols-2 gap-4">
+                        <div className="mt-2 form-grid">
                             <div>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Latitude</p>
                                 <p style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{currentLocation.lat.toFixed(6)}</p>

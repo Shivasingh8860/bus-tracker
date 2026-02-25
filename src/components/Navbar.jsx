@@ -15,7 +15,7 @@ const Navbar = () => {
 
     return (
         <nav className="glass" style={{ margin: '1rem', padding: '1rem 2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-center justify-between" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="header-responsive" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <Link to="/" className="flex items-center gap-2">
                     <motion.div
                         initial={{ rotate: -10 }}
@@ -26,7 +26,7 @@ const Navbar = () => {
                     </motion.div>
                     <h2 className="title-gradient" style={{ margin: 0 }}>CampusTracker</h2>
                 </Link>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 md:gap-4">
                     <Link to="/" className="btn btn-outline" style={{ border: 'none' }}>
                         <Map size={18} /> Public Map
                     </Link>
