@@ -27,6 +27,25 @@ const stationIcon = new L.DivIcon({
     iconAnchor: [8, 8],
 });
 
+const userIcon = new L.DivIcon({
+    className: 'custom-user-icon',
+    html: `<div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px #3b82f6; border: 3px solid white; transform: translate(-50%, -50%);"><div style="background: white; width: 6px; height: 6px; border-radius: 50%;"></div></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+});
+
+// Haversine distance
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth radius km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+};
+
 const center = [28.6865, 77.5533]; // Default Sanskar College coordinate
 
 // Component to dynamically fit bounds if route changes
@@ -43,6 +62,23 @@ function SetBounds({ route }) {
 
 const MapComponent = ({ selectedRouteId }) => {
     const { routes, activeBuses, drivers } = useBuses();
+    const [userLocation, setUserLocation] = useState(null);
+
+    useEffect(() => {
+        if ("geolocation" in navigator) {
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    setUserLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                (error) => console.error("Error watching user location:", error),
+                { enableHighAccuracy: true }
+            );
+            return () => navigator.geolocation.clearWatch(watchId);
+        }
+    }, []);
 
     const displayRoutes = selectedRouteId === 'all'
         ? routes
@@ -100,6 +136,11 @@ const MapComponent = ({ selectedRouteId }) => {
                                 <div style={{ color: 'var(--bg-dark)' }}>
                                     <strong>{bus.driver?.busNumber || 'Unknown Bus'}</strong>
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem' }}>Driver: {bus.driver?.name || bus.driverId}</p>
+                                    {userLocation && (
+                                        <p style={{ margin: '0.2rem 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
+                                            Distance: {getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng).toFixed(2)} km
+                                        </p>
+                                    )}
                                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>
                                         Updated: {new Date(bus.updatedAt).toLocaleTimeString()}
                                     </p>
@@ -108,6 +149,17 @@ const MapComponent = ({ selectedRouteId }) => {
                         </Marker>
                     );
                 })}
+
+                {/* User Current Location */}
+                {userLocation && (
+                    <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
+                        <Popup>
+                            <div style={{ color: 'var(--bg-dark)' }}>
+                                <strong>You are here</strong>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
             </MapContainer>
         </div>
     );

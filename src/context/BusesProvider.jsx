@@ -1,7 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-
-const BusesContext = createContext();
+import { BusesContext } from './BusesContext';
 
 // Mock default data (simulate backend)
 export const BusesProvider = ({ children }) => {
@@ -131,5 +130,3 @@ export const BusesProvider = ({ children }) => {
         </BusesContext.Provider>
     );
 };
-
-export const useBuses = () => useContext(BusesContext);

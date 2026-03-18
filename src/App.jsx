@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { BusesProvider } from './context/BusesContext';
+import { AuthProvider } from './context/AuthProvider';
+import { useAuth } from './context/AuthContext';
+import { BusesProvider } from './context/BusesProvider';
 import Navbar from './components/Navbar';
 import UserTracking from './pages/UserTracking';
 import Login from './pages/Login';
