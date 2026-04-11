@@ -134,7 +134,7 @@ const LocateControl = () => {
 };
 
 const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = false, showHistory = false, historyPoints = [] }) => {
-    const { routes, activeBuses, drivers, trafficReports, submitTrafficReport } = useBuses();
+    const { routes, activeBuses, drivers, trafficReports, submitTrafficReport, messages, addMessage } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
     const [mapType, setMapType] = useState('roadmap');
     const [alarmStopId, setAlarmStopId] = useState(null);
@@ -392,26 +392,28 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                              }}>
                                                 {bus.crowdStatus || 'Empty'}
                                              </span>
-                                             {!isStale && <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>}
+                                             {!isStale && <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 600 }}>● LIVE</span>}
                                         </div>
                                     </div>
                                     
-                                    {/* Schedule Overlay */}
-                                    <div className="flex items-center gap-2 mb-3 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--panel-border)' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (Date.now() - new Date(bus.updatedAt).getTime() > 120000) ? 'var(--danger)' : 'var(--accent)' }}></div>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                            {(Date.now() - new Date(bus.updatedAt).getTime() > 120000) ? 'SCHEDULE DELAYED' : 'ON TIME'}
-                                        </span>
-                                    </div>
-
-                                    {/* Crowdsourced Traffic Alert */}
-                                    {(trafficReports[bus.driverId] || 0) > 2 && (
-                                        <div className="mb-3 px-2 py-1 rounded" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid var(--warning)', color: 'var(--warning)', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center' }}>
-                                            🚦 HEAVY TRAFFIC REPORTED ({trafficReports[bus.driverId]} Passengers)
-                                        </div>
-                                    )}
-
-                                    <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
+                                    {/* Smart Forecast Logic */}
+                                    {(() => {
+                                        const hour = new Date().getHours();
+                                        const isPeak = (hour >= 8 && hour <= 10) || (hour >= 16 && hour <= 18);
+                                        const isHeavilyLoaded = bus.passengerCount > 15;
+                                        
+                                        if (isPeak && !isStale) {
+                                            return (
+                                                <div className="mb-3 px-2 py-2 rounded" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid var(--primary)', borderLeft: '4px solid var(--primary)' }}>
+                                                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)' }}>🧠 SMART FORECAST</p>
+                                                    <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-main)' }}>
+                                                        {isHeavilyLoaded ? '🔥 Peak Load: Likely full at next 2 stops.' : '✅ Optimal Time: Plenty of space available.'}
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
 
                                     {/* Action Grid */}
                                     <div className="flex flex-col gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'var(--panel-border)' }}>
@@ -420,13 +422,13 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                                 onClick={() => submitTrafficReport(bus.driverId)}
                                                 style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
                                             >
-                                                Traffic!
+                                                Report Traffic
                                             </button>
                                             <button 
                                                 onClick={() => shareTracking(bus.driverId)}
                                                 style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
                                             >
-                                                Share Trip
+                                                Share Tracking
                                             </button>
                                         </div>
                                         <a 

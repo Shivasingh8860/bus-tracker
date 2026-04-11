@@ -9,7 +9,21 @@ export const BusesProvider = ({ children }) => {
     const [activeBuses, setActiveBuses] = useState({});
     const [broadcasts, setBroadcasts] = useState([]);
     const [trafficReports, setTrafficReports] = useState({});
+    const [messages, setMessages] = useState({}); // { driverId: [msg1, msg2] }
     const lastLogTime = React.useRef({});
+
+    const addMessage = (driverId, text, userName) => {
+        const newMessage = {
+            id: Date.now(),
+            text,
+            userName: userName || 'Passenger',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => ({
+            ...prev,
+            [driverId]: [...(prev[driverId] || []), newMessage].slice(-20)
+        }));
+    };
 
     useEffect(() => {
         // Fetch Initial Data
@@ -252,7 +266,8 @@ export const BusesProvider = ({ children }) => {
             broadcasts, sendBroadcast, removeBroadcast,
             fetchHistory,
             trafficReports, submitTrafficReport,
-            updatePassengerCount
+            updatePassengerCount,
+            messages, addMessage
         }}>
             {children}
         </BusesContext.Provider>
