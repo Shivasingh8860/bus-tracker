@@ -60,10 +60,16 @@ function SetBounds({ route }) {
 }
 
 const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = false, historyPoints = [] }) => {
-    const { routes, activeBuses, drivers } = useBuses();
+    const { routes, activeBuses, drivers, trafficReports, submitTrafficReport } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
     const alertedBuses = React.useRef(new Set());
     const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    const shareTracking = (driverId) => {
+        const url = `${window.location.origin}${window.location.pathname}?track=${driverId}`;
+        navigator.clipboard.writeText(url);
+        alert("Tracking link copied to clipboard! Share it with your friends.");
+    };
 
     useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -209,7 +215,30 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = fal
                                         </span>
                                     </div>
 
+                                    {/* Crowdsourced Traffic Alert */}
+                                    {(trafficReports[bus.driverId] || 0) > 2 && (
+                                        <div className="mb-3 px-2 py-1 rounded" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid var(--warning)', color: 'var(--warning)', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center' }}>
+                                            🚦 HEAVY TRAFFIC REPORTED ({trafficReports[bus.driverId]} Passengers)
+                                        </div>
+                                    )}
+
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
+
+                                    {/* Actions */}
+                                    <div className="flex gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                                        <button 
+                                            onClick={() => submitTrafficReport(bus.driverId)}
+                                            style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
+                                        >
+                                            Report Traffic
+                                        </button>
+                                        <button 
+                                            onClick={() => shareTracking(bus.driverId)}
+                                            style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}
+                                        >
+                                            Share Trip
+                                        </button>
+                                    </div>
                                     
                                     {userLocation && (() => {
                                         const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng);

@@ -9,6 +9,14 @@ const UserTracking = () => {
     const [selectedRoute, setSelectedRoute] = useState('all');
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
+    React.useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const trackId = params.get('track');
+        if (trackId && activeBuses[trackId]) {
+            setSelectedRoute(activeBuses[trackId].routeId);
+        }
+    }, [activeBuses]);
+
     const toggleNotifications = () => {
         if (!notificationsEnabled) {
             Notification.requestPermission().then(permission => {

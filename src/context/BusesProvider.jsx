@@ -8,7 +8,8 @@ export const BusesProvider = ({ children }) => {
     const [drivers, setDrivers] = useState([]);
     const [activeBuses, setActiveBuses] = useState({});
     const [broadcasts, setBroadcasts] = useState([]);
-    const lastLogTime = React.useRef({}); // Track log frequency per driver
+    const [trafficReports, setTrafficReports] = useState({});
+    const lastLogTime = React.useRef({});
 
     useEffect(() => {
         // Fetch Initial Data
@@ -41,11 +42,20 @@ export const BusesProvider = ({ children }) => {
 
             const { data: broadcastData } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(3);
             if (broadcastData) setBroadcasts(broadcastData);
+
+            // Fetch Traffic Reports
+            const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+            const { data: reportData } = await supabase.from('traffic_reports').select('bus_id').gt('created_at', fifteenMinsAgo);
+            if (reportData) {
+                const counts = {};
+                reportData.forEach(r => counts[r.bus_id] = (counts[r.bus_id] || 0) + 1);
+                setTrafficReports(counts);
+            }
         };
 
         fetchData();
 
-        // Subscribe to real-time updates for active buses moving on the map!
+        // Subscribe to real-time updates
         const busChannel = supabase.channel('public:active_buses')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'active_buses' }, payload => {
                 if (payload.eventType === 'DELETE') {
@@ -70,7 +80,6 @@ export const BusesProvider = ({ children }) => {
             })
             .subscribe();
 
-        // Broadcast subscription
         const broadcastChannel = supabase.channel('public:broadcasts')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts' }, payload => {
                 if (payload.eventType === 'INSERT') {
@@ -81,11 +90,33 @@ export const BusesProvider = ({ children }) => {
             })
             .subscribe();
 
+        // Periodic traffic report refresh
+        const trafficInterval = setInterval(async () => {
+            const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+            const { data } = await supabase.from('traffic_reports').select('bus_id').gt('created_at', fifteenMinsAgo);
+            if (data) {
+                const counts = {};
+                data.forEach(r => counts[r.bus_id] = (counts[r.bus_id] || 0) + 1);
+                setTrafficReports(counts);
+            }
+        }, 30000);
+
         return () => {
             supabase.removeChannel(busChannel);
             supabase.removeChannel(broadcastChannel);
+            clearInterval(trafficInterval);
         };
     }, []);
+
+    const submitTrafficReport = async (busId) => {
+        const { error } = await supabase.from('traffic_reports').insert([{ bus_id: busId }]);
+        if (!error) {
+            setTrafficReports(prev => ({
+                ...prev,
+                [busId]: (prev[busId] || 0) + 1
+            }));
+        }
+    };
 
     // Intercept state changes and push to Supabase
     const addDriverToDB = async (driver) => {
@@ -200,7 +231,8 @@ export const BusesProvider = ({ children }) => {
             removeDriver: removeDriverFromDB,
             activeBuses, updateBusLocation, stopBusTracking,
             broadcasts, sendBroadcast, removeBroadcast,
-            fetchHistory
+            fetchHistory,
+            trafficReports, submitTrafficReport
         }}>
             {children}
         </BusesContext.Provider>
