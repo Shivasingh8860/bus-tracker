@@ -264,30 +264,32 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                             🔔 Notify on WhatsApp
                                         </a>
                                     </div>
-                                    
-                                    {userLocation && (() => {
-                                        const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng) * 1000;
+                                                            {userLocation && (() => {
+                                        const distanceKM = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng);
+                                        const distanceMeters = Math.round(distanceKM * 1000);
                                         
                                         // Voice Alert Logic
-                                        if (voiceEnabled && distance < 1000 && !spokenBuses.current.has(bus.driverId)) {
+                                        if (voiceEnabled && distanceMeters < 1000 && !spokenBuses.current.has(bus.driverId)) {
                                             const utterance = new SpeechSynthesisUtterance(`Attention. Bus ${bus.driver?.busNumber || 'approaching'} is nearly here.`);
                                             window.speechSynthesis.speak(utterance);
                                             spokenBuses.current.add(bus.driverId);
                                         }
 
                                         // Reset spoken state if bus moves away
-                                        if (distance > 1500 && spokenBuses.current.has(bus.driverId)) {
+                                        if (distanceMeters > 1500 && spokenBuses.current.has(bus.driverId)) {
                                             spokenBuses.current.delete(bus.driverId);
                                         }
 
-                                        const avgSpeed = 20; // 20 km/h avg city speed
-                                        const etaMinutes = Math.round((distance / avgSpeed) * 60);
+                                        const avgSpeed = 20; // 20 km/h avg campus speed
+                                        const etaMinutes = Math.max(1, Math.round((distanceKM / avgSpeed) * 60));
                                         
                                         return (
                                             <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px solid var(--panel-border)' }}>
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Distance:</span>
-                                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{distance.toFixed(2)} km</span>
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                                                        {distanceKM < 1 ? `${distanceMeters}m` : `${distanceKM.toFixed(2)} km`}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Est. Arrival:</span>

@@ -42,10 +42,10 @@ const UserTracking = () => {
 
     return (
         <div className="container" style={{ paddingBottom: '2rem' }}>
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
                 <div>
-                   <h1 className="title-gradient" style={{ fontSize: '2.5rem' }}>Live Tracking</h1>
-                   <p style={{ color: 'var(--text-secondary)' }}>Real-time campus transit intelligence</p>
+                   <h1 className="title-gradient" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)' }}>Live Tracking</h1>
+                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Real-time campus transit intelligence</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-panel-border" style={{ background: 'var(--bg-card)', border: '1px solid var(--panel-border)', borderRadius: '100px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: activeCount > 0 ? 'var(--accent)' : 'var(--danger)', boxShadow: activeCount > 0 ? '0 0 10px var(--accent)' : 'none' }}></div>
@@ -72,9 +72,37 @@ const UserTracking = () => {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                 >
+                    {/* Alert Control Center - MOVED TO TOP */}
+                    <div className="glass-card" style={{ border: '1px solid var(--primary-glow)' }}>
+                          <div className="flex items-center gap-2 mb-3">
+                             <RefreshCw size={16} color="var(--primary)" />
+                             <h3 style={{ fontSize: '0.9rem', margin: 0 }}>Smart Alerts</h3>
+                          </div>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                             Get notifications & voice alerts for nearby buses.
+                          </p>
+                            <button
+                                className={`btn w-full justify-start mb-2 ${notificationsEnabled ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={toggleNotifications}
+                            >
+                                <Compass size={18} />
+                                <span>{notificationsEnabled ? 'Smart Alerts Active' : 'Enable Smart Alerts'}</span>
+                            </button>
+
+                            <button
+                                className={`btn w-full justify-start ${voiceEnabled ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={toggleVoice}
+                                style={{ borderColor: voiceEnabled ? 'transparent' : 'var(--accent)', color: voiceEnabled ? 'white' : 'var(--accent)' }}
+                            >
+                                <Volume2 size={18} />
+                                <span>{voiceEnabled ? 'Voice Alerts On' : 'Enable Voice Alerts'}</span>
+                            </button>
+                    </div>
+
                     <div className="glass-card">
                         <h3 className="mb-4" style={{ fontSize: '1rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Navigation</h3>
                         <div className="flex flex-col gap-2">
+
                             <button
                                 className={`btn w-full justify-start ${selectedRoute === 'all' ? 'btn-primary' : 'btn-outline'}`}
                                 onClick={() => setSelectedRoute('all')}
@@ -119,31 +147,6 @@ const UserTracking = () => {
                         </div>
                     </div>
 
-                    <div className="glass-card" style={{ border: '1px solid var(--primary-glow)' }}>
-                         <div className="flex items-center gap-2 mb-3">
-                            <RefreshCw size={16} color="var(--primary)" />
-                            <h3 style={{ fontSize: '0.9rem', margin: 0 }}>Smart Alerts</h3>
-                         </div>
-                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                            Get a notification when a bus is within 1km of your location.
-                         </p>
-                            <button
-                                className={`btn w-full justify-start mb-2 ${notificationsEnabled ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={toggleNotifications}
-                            >
-                                <Compass size={18} />
-                                <span>{notificationsEnabled ? 'Smart Alerts Active' : 'Enable Smart Alerts'}</span>
-                            </button>
-
-                            <button
-                                className={`btn w-full justify-start ${voiceEnabled ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={toggleVoice}
-                                style={{ borderColor: voiceEnabled ? 'transparent' : 'var(--accent)', color: voiceEnabled ? 'white' : 'var(--accent)' }}
-                            >
-                                <Volume2 size={18} />
-                                <span>{voiceEnabled ? 'Voice Alerts On' : 'Enable Voice Alerts'}</span>
-                            </button>
-                    </div>
                 </motion.div>
             </div>
         </div>

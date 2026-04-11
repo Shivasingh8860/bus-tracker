@@ -44,7 +44,7 @@ const Navbar = () => {
                 )}
             </AnimatePresence>
 
-            <nav className="glass-card" style={{ margin: '1rem auto', maxWidth: '1200px', width: '92%', padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-lg)' }}>
+            <nav className="glass-card" style={{ margin: '0.5rem auto', maxWidth: '1200px', width: '96%', padding: '0.5rem 1rem', borderRadius: 'var(--radius-lg)' }}>
             <div className="flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-3">
                     <Bus size={28} color="var(--primary)" />
