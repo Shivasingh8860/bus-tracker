@@ -60,6 +60,33 @@ function SetBounds({ route }) {
     return null;
 }
 
+const RoadSnappedPolyline = ({ waypoints, color, weight, opacity, dashArray }) => {
+    const [path, setPath] = useState([]);
+
+    useEffect(() => {
+        if (!waypoints || waypoints.length < 2) return;
+
+        const coords = waypoints.map(wp => `${wp.lng},${wp.lat}`).join(';');
+        fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.routes && data.routes[0]) {
+                    const snapped = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    setPath(snapped);
+                } else {
+                    // Fallback to straight lines
+                    setPath(waypoints.map(wp => [wp.lat, wp.lng]));
+                }
+            })
+            .catch(() => {
+                setPath(waypoints.map(wp => [wp.lat, wp.lng]));
+            });
+    }, [waypoints]);
+
+    if (path.length === 0) return null;
+    return <Polyline positions={path} color={color} weight={weight} opacity={opacity} dashArray={dashArray} />;
+};
+
 const LocateControl = () => {
     const map = useMap();
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -210,12 +237,25 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                 {displayRoutes.map((route) => {
                     if (!route.waypoints || route.waypoints.length === 0) return null;
                     const positions = route.waypoints.map(wp => [wp.lat, wp.lng]);
+                    
+                    const isFocused = selectedRouteId === 'all' || selectedRouteId === route.id;
 
                     return (
                         <React.Fragment key={route.id}>
-                            <Polyline positions={positions} color="var(--primary)" weight={3} opacity={0.6} dashArray="8, 8" />
+                            <RoadSnappedPolyline 
+                                waypoints={route.waypoints} 
+                                color="var(--primary)" 
+                                weight={isFocused ? 5 : 2} 
+                                opacity={isFocused ? 0.8 : 0.05} 
+                                dashArray={isFocused ? "0" : "8, 8"} 
+                            />
                             {route.waypoints.map((wp, idx) => (
-                                <Marker key={`${route.id}-wp-${idx}`} position={[wp.lat, wp.lng]} icon={stationIcon}>
+                                <Marker 
+                                    key={`${route.id}-wp-${idx}`} 
+                                    position={[wp.lat, wp.lng]} 
+                                    icon={stationIcon}
+                                    opacity={isFocused ? 1 : 0.1}
+                                >
                                     <Popup className="bus-popup">
                                         <div style={{ padding: '0.2rem' }}>
                                             <p style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{wp.name || `Stop ${idx + 1}`}</p>
@@ -224,7 +264,7 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                     </Popup>
                                 </Marker>
                             ))}
-                            {selectedRouteId !== 'all' && <SetBounds route={route} />}
+                            {selectedRouteId !== 'all' && selectedRouteId === route.id && <SetBounds route={route} />}
                         </React.Fragment>
                     );
                 })}
@@ -248,27 +288,56 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                 ))}
 
                 {activeBusesList.map((bus) => {
-                    if (selectedRouteId !== 'all' && bus.routeId !== selectedRouteId) return null;
+                    const lastUpdate = new Date(bus.updatedAt).getTime();
+                    const isStale = (Date.now() - lastUpdate) > 120000; // 2 minutes staleness
+                    const isFocus = selectedRouteId === 'all' || selectedRouteId === bus.routeId;
+                    
+                    const dynamicBusIcon = new L.DivIcon({
+                        className: 'custom-bus-icon',
+                        html: `
+                            <div style="
+                                filter: ${isStale ? 'grayscale(1) opacity(0.8)' : 'none'};
+                                opacity: ${isFocus ? '1' : '0.15'};
+                                transition: all 0.4s ease;
+                                transform: scale(${isFocus ? '1' : '0.8'});
+                            ">
+                                <div style="background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--primary-glow); border: 2px solid white; transform: translate(-50%, -50%); cursor: pointer; position: relative;">
+                                    ${isStale ? '⚠️' : '🚌'}
+                                    ${isStale ? '' : '<div style="position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; animate: pulse 2s infinite;"></div>'}
+                                </div>
+                            </div>
+                        `,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20],
+                    });
 
                     return (
-                        <Marker key={bus.driverId} position={[bus.lat, bus.lng]} icon={busIcon}>
+                        <Marker 
+                            key={bus.driverId} 
+                            position={[bus.lat, bus.lng]} 
+                            icon={dynamicBusIcon}
+                            zIndexOffset={isFocus ? 1000 : 0}
+                        >
                             <Popup className="bus-popup">
                                 <div style={{ padding: '0.2rem', minWidth: '150px' }}>
                                     <div className="flex justify-between items-center mb-2">
-                                        <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', margin: 0 }}>{bus.driver?.busNumber || 'Bus'}</p>
+                                        <p style={{ fontWeight: 700, fontSize: '1rem', color: isStale ? 'var(--text-muted)' : 'var(--text-main)', margin: 0 }}>
+                                            {bus.driver?.busNumber || 'Bus'}
+                                            {isStale && <span style={{ fontSize: '0.6rem', color: 'var(--danger)', display: 'block' }}>SIGNAL LOST</span>}
+                                        </p>
                                         <div className="flex items-center gap-2">
                                              <span style={{ 
                                                 fontSize: '0.6rem', 
                                                 padding: '2px 6px', 
                                                 borderRadius: '4px',
-                                                background: bus.crowdStatus === 'Full' ? 'var(--danger)' : bus.crowdStatus === 'Substantial' ? 'var(--warning)' : 'var(--accent)',
+                                                background: isStale ? 'var(--text-muted)' : (bus.crowdStatus === 'Full' ? 'var(--danger)' : bus.crowdStatus === 'Substantial' ? 'var(--warning)' : 'var(--accent)'),
                                                 color: 'white',
                                                 fontWeight: 800,
                                                 textTransform: 'uppercase'
                                              }}>
                                                 {bus.crowdStatus || 'Empty'}
                                              </span>
-                                             <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>
+                                             {!isStale && <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>}
                                         </div>
                                     </div>
                                     

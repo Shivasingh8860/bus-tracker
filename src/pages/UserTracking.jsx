@@ -7,8 +7,12 @@ import { Search, Compass, Info, Map as MapIcon, RefreshCw, BusFront, Volume2 } f
 const UserTracking = () => {
     const { routes, activeBuses } = useBuses();
     const [selectedRoute, setSelectedRoute] = useState('all');
-    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-    const [voiceEnabled, setVoiceEnabled] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+        return localStorage.getItem('bus_notifications') === 'true';
+    });
+    const [voiceEnabled, setVoiceEnabled] = useState(() => {
+        return localStorage.getItem('bus_voice') === 'true';
+    });
 
     React.useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -19,20 +23,25 @@ const UserTracking = () => {
     }, [activeBuses]);
 
     const toggleNotifications = () => {
-        if (!notificationsEnabled) {
+        const newState = !notificationsEnabled;
+        if (newState) {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
                     setNotificationsEnabled(true);
+                    localStorage.setItem('bus_notifications', 'true');
                 }
             });
         } else {
             setNotificationsEnabled(false);
+            localStorage.setItem('bus_notifications', 'false');
         }
     };
 
     const toggleVoice = () => {
-        setVoiceEnabled(!voiceEnabled);
-        if (!voiceEnabled) {
+        const newState = !voiceEnabled;
+        setVoiceEnabled(newState);
+        localStorage.setItem('bus_voice', newState.toString());
+        if (newState) {
             const msg = new SpeechSynthesisUtterance("Voice alerts enabled");
             window.speechSynthesis.speak(msg);
         }
@@ -112,38 +121,45 @@ const UserTracking = () => {
 
                             <div style={{ marginTop: '1rem', marginBottom: '0.5rem', height: '1px', background: 'var(--panel-border)' }}></div>
 
-                            {routes.map(route => {
-                                const busesOnRoute = Object.values(activeBuses).filter(b => b.routeId === route.id);
-                                const isActive = busesOnRoute.length > 0;
-                                
-                                return (
-                                    <button
-                                        key={route.id}
-                                        className={`btn w-full justify-between items-center ${selectedRoute === route.id ? 'btn-primary' : 'btn-outline'}`}
-                                        onClick={() => setSelectedRoute(route.id)}
-                                        style={{ 
-                                            padding: '1rem 1.25rem', 
-                                            opacity: isActive ? 1 : 0.7,
-                                            borderLeft: selectedRoute === route.id ? '4px solid white' : '4px solid transparent'
-                                        }}
-                                    >
-                                        <div className="flex flex-col items-start" style={{ textAlign: 'left' }}>
-                                            <span style={{ fontWeight: 600, fontSize: '1rem' }}>{route.name}</span>
-                                            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{route.id}</span>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            {isActive ? (
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }}></span>
-                                                    <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700 }}>{busesOnRoute.length} LIVE</span>
-                                                </div>
-                                            ) : (
-                                                <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Inactive</span>
-                                            )}
-                                        </div>
-                                    </button>
-                                )
-                            })}
+                            {routes.length === 0 ? (
+                                // Skeleton Loaders
+                                [1, 2, 3].map(i => (
+                                    <div key={i} className="skeleton" style={{ height: '60px', width: '100%', marginBottom: '0.5rem', opacity: 0.5 - (i*0.1) }}></div>
+                                ))
+                            ) : (
+                                routes.map(route => {
+                                    const busesOnRoute = Object.values(activeBuses).filter(b => b.routeId === route.id);
+                                    const isActive = busesOnRoute.length > 0;
+                                    
+                                    return (
+                                        <button
+                                            key={route.id}
+                                            className={`btn w-full justify-between items-center ${selectedRoute === route.id ? 'btn-primary' : 'btn-outline'}`}
+                                            onClick={() => setSelectedRoute(route.id)}
+                                            style={{ 
+                                                padding: '1rem 1.25rem', 
+                                                opacity: isActive ? 1 : 0.7,
+                                                borderLeft: selectedRoute === route.id ? '4px solid white' : '4px solid transparent'
+                                            }}
+                                        >
+                                            <div className="flex flex-col items-start" style={{ textAlign: 'left' }}>
+                                                <span style={{ fontWeight: 600, fontSize: '1rem' }}>{route.name}</span>
+                                                <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{route.id}</span>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-1">
+                                                {isActive ? (
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }}></span>
+                                                        <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 700 }}>{busesOnRoute.length} LIVE</span>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Inactive</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    )
+                                })
+                            )}
                         </div>
                     </div>
 
