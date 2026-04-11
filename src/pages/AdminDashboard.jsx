@@ -34,7 +34,12 @@ function MapSelector({ waypoints, setWaypoints }) {
 }
 
 const AdminDashboard = () => {
-    const { drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, routes, addRoute: handleAddRouteDB, removeRoute: handleRemoveRouteDB, activeBuses } = useBuses();
+    const { 
+        drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, 
+        routes, addRoute: handleAddRouteDB, removeRoute: handleRemoveRouteDB, 
+        activeBuses,
+        broadcasts, sendBroadcast: handleSendBroadcast, removeBroadcast: handleRemoveBroadcast
+    } = useBuses();
 
     const [newDriver, setNewDriver] = useState({ id: '', name: '', busNumber: '', password: '' });
     const [newRoute, setNewRoute] = useState({ id: '', name: '' });
@@ -203,6 +208,62 @@ const AdminDashboard = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Operational Efficiency: Broadcast Center */}
+            <motion.div 
+                className="glass-card mt-8" 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }}
+                style={{ border: '1px solid var(--primary-glow)' }}
+            >
+                <div className="flex items-center gap-2 mb-6">
+                    <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '50%' }}>
+                        <Plus size={20} color="white" />
+                    </div>
+                    <h3>Global Broadcast Center</h3>
+                </div>
+
+                <div className="layout-equal">
+                    <div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                            Send real-time alerts to every student's map instantly.
+                        </p>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const msg = e.target.msg.value;
+                            const type = e.target.type.value;
+                            if (!msg) return;
+                            handleSendBroadcast(msg, type);
+                            e.target.reset();
+                        }} className="flex flex-col gap-3">
+                            <textarea name="msg" placeholder="Type emergency message here..." style={{ minHeight: '100px', resize: 'none' }} required></textarea>
+                            <div className="flex gap-2">
+                                <select name="type" style={{ flex: 1 }}>
+                                    <option value="info">Information (Blue)</option>
+                                    <option value="warning">Warning (Orange)</option>
+                                    <option value="emergency">Emergency (Red)</option>
+                                </select>
+                                <button type="submit" className="btn btn-primary">Publish Alert</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px dashed var(--panel-border)' }}>
+                        <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase' }}>Active Announcements</h4>
+                        <div className="flex flex-col gap-3">
+                            {broadcasts?.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No active broadcasts.</p>}
+                            {broadcasts?.map(b => (
+                                <div key={b.id} className="flex justify-between items-start gap-4" style={{ padding: '1rem', border: '1px solid var(--panel-border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-main)' }}>
+                                    <p style={{ fontSize: '0.9rem', lineHeight: 1.4 }}>{b.message}</p>
+                                    <button onClick={() => handleRemoveBroadcast(b.id)} className="btn btn-danger" style={{ padding: '0.3rem', borderRadius: '50%' }}>
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
         </div>
     );
 };

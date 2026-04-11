@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Bus, Map, LogOut, Shield, MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useBuses } from '../context/BusesContext';
+import { Bus, Map, LogOut, Shield, MapPin, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const { broadcasts } = useBuses();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -13,8 +15,36 @@ const Navbar = () => {
         navigate('/');
     };
 
+    const latestBroadcast = broadcasts[0];
+
+    const typeColors = {
+        info: { bg: 'rgba(99, 102, 241, 0.1)', border: 'rgba(99, 102, 241, 0.3)', text: 'var(--primary)' },
+        warning: { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)', text: 'var(--warning)' },
+        emergency: { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)', text: 'var(--danger)' }
+    };
+
     return (
-        <nav className="glass-card" style={{ margin: '1.5rem auto', maxWidth: '1200px', width: '92%', padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-lg)' }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 1000 }}>
+            {/* Global Alert Bar */}
+            <AnimatePresence>
+                {latestBroadcast && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        style={{ background: typeColors[latestBroadcast.type]?.bg || typeColors.info.bg, borderBottom: `1px solid ${typeColors[latestBroadcast.type]?.border || typeColors.info.border}`, overflow: 'hidden' }}
+                    >
+                        <div className="container" style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <Bell size={16} color={typeColors[latestBroadcast.type]?.text || 'var(--primary)'} className="fade-in" />
+                            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: typeColors[latestBroadcast.type]?.text || 'var(--primary)' }}>
+                                {latestBroadcast.message}
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <nav className="glass-card" style={{ margin: '1rem auto', maxWidth: '1200px', width: '92%', padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-lg)' }}>
             <div className="flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-3">
                     <Bus size={28} color="var(--primary)" />
@@ -48,7 +78,8 @@ const Navbar = () => {
                     )}
                 </div>
             </div>
-        </nav>
+            </nav>
+        </div>
     );
 };
 

@@ -7,6 +7,7 @@ export const BusesProvider = ({ children }) => {
     const [routes, setRoutes] = useState([]);
     const [drivers, setDrivers] = useState([]);
     const [activeBuses, setActiveBuses] = useState({});
+    const [broadcasts, setBroadcasts] = useState([]);
 
     useEffect(() => {
         // Fetch Initial Data
@@ -36,12 +37,15 @@ export const BusesProvider = ({ children }) => {
                 });
                 setActiveBuses(busMap);
             }
+
+            const { data: broadcastData } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(3);
+            if (broadcastData) setBroadcasts(broadcastData);
         };
 
         fetchData();
 
         // Subscribe to real-time updates for active buses moving on the map!
-        const channel = supabase.channel('public:active_buses')
+        const busChannel = supabase.channel('public:active_buses')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'active_buses' }, payload => {
                 if (payload.eventType === 'DELETE') {
                     setActiveBuses(prev => {
@@ -65,8 +69,20 @@ export const BusesProvider = ({ children }) => {
             })
             .subscribe();
 
+        // Broadcast subscription
+        const broadcastChannel = supabase.channel('public:broadcasts')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                    setBroadcasts(prev => [payload.new, ...prev].slice(0, 3));
+                } else if (payload.eventType === 'DELETE') {
+                    setBroadcasts(prev => prev.filter(b => b.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
         return () => {
-            supabase.removeChannel(channel);
+            supabase.removeChannel(busChannel);
+            supabase.removeChannel(broadcastChannel);
         };
     }, []);
 
@@ -142,12 +158,27 @@ export const BusesProvider = ({ children }) => {
         }
     };
 
+    const sendBroadcast = async (message, type = 'info') => {
+        const { error } = await supabase.from('broadcasts').insert([{ message, type }]);
+        if (error) {
+            console.error("Error sending broadcast:", error);
+        }
+    };
+
+    const removeBroadcast = async (id) => {
+        const { error } = await supabase.from('broadcasts').delete().eq('id', id);
+        if (error) {
+            console.error("Error removing broadcast:", error);
+        }
+    };
+
     return (
         <BusesContext.Provider value={{
             routes, addRoute: addRouteToDB, removeRoute: removeRouteFromDB,
             drivers, addDriver: addDriverToDB,
             removeDriver: removeDriverFromDB,
-            activeBuses, updateBusLocation, stopBusTracking
+            activeBuses, updateBusLocation, stopBusTracking,
+            broadcasts, sendBroadcast, removeBroadcast
         }}>
             {children}
         </BusesContext.Provider>
