@@ -139,15 +139,28 @@ const MapComponent = ({ selectedRouteId }) => {
                                     </div>
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
                                     
-                                    {userLocation && (
-                                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--panel-border)' }}>
-                                            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
-                                                {getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng).toFixed(2)} km away
-                                            </p>
-                                        </div>
-                                    )}
-                                    <p style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                        Last signal: {new Date(bus.updatedAt).toLocaleTimeString()}
+                                    {userLocation && (() => {
+                                        const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng);
+                                        const avgSpeed = 20; // 20 km/h avg city speed
+                                        const etaMinutes = Math.round((distance / avgSpeed) * 60);
+                                        
+                                        return (
+                                            <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px solid var(--panel-border)' }}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Distance:</span>
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{distance.toFixed(2)} km</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Est. Arrival:</span>
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                                        {etaMinutes < 2 ? 'Arriving soon' : `~${etaMinutes} mins`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                    <p style={{ marginTop: '0.6rem', fontSize: '0.65rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '0.4rem' }}>
+                                        Signal: {new Date(bus.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                             </Popup>
