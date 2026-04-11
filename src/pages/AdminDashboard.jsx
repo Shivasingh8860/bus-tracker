@@ -4,6 +4,7 @@ import { Users, Route as RouteIcon, Plus, Bus, Trash2, MapPin, Search } from 'lu
 import { motion } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import MapComponent from '../components/MapComponent';
 
 const wpIcon = new L.DivIcon({
     className: 'custom-station-icon',
@@ -38,13 +39,26 @@ const AdminDashboard = () => {
         drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, 
         routes, addRoute: handleAddRouteDB, removeRoute: handleRemoveRouteDB, 
         activeBuses,
-        broadcasts, sendBroadcast: handleSendBroadcast, removeBroadcast: handleRemoveBroadcast
+        broadcasts, sendBroadcast: handleSendBroadcast, removeBroadcast: handleRemoveBroadcast,
+        fetchHistory: handleFetchHistory
     } = useBuses();
 
     const [newDriver, setNewDriver] = useState({ id: '', name: '', busNumber: '', password: '' });
     const [newRoute, setNewRoute] = useState({ id: '', name: '' });
     const [routeWaypoints, setRouteWaypoints] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showHistory, setShowHistory] = useState(false);
+    const [historyPoints, setHistoryPoints] = useState([]);
+
+    const toggleAnalytics = async () => {
+        if (!showHistory) {
+            const data = await handleFetchHistory();
+            setHistoryPoints(data);
+            setShowHistory(true);
+        } else {
+            setShowHistory(false);
+        }
+    };
 
     const handleSearchAdd = async () => {
         if (!searchQuery) return;
@@ -106,18 +120,44 @@ const AdminDashboard = () => {
                     <p style={{ color: 'var(--text-secondary)' }}>Manage your operation's infrastructure</p>
                 </div>
 
-                <div className="flex gap-4">
-                    <div className="glass-card flex items-center gap-4" style={{ padding: '1rem 1.5rem' }}>
+                <div className="flex gap-4 items-center">
+                    <button 
+                        onClick={toggleAnalytics}
+                        className={`btn ${showHistory ? 'btn-primary' : 'btn-outline'}`}
+                    >
+                         {showHistory ? '🔥 Heatmap Active' : '📍 View Route History'}
+                    </button>
+                    <div className="glass-card flex items-center gap-4" style={{ padding: '0.9rem 1.5rem' }}>
                         <div style={{ background: 'var(--primary-glow)', padding: '0.6rem', borderRadius: '50%' }}>
                             <Bus size={20} color="var(--primary)" />
                         </div>
                         <div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fleet Live</p>
                             <h3 style={{ fontSize: '1.25rem' }}>{Object.keys(activeBuses).length}</h3>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Fleet Live View with Analytics */}
+            <motion.div 
+                className="glass-card mb-8 overflow-hidden" 
+                initial={{ opacity: 0, scale: 0.99 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{ height: '450px', padding: 0, position: 'relative' }}
+            >
+                <div style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 1000 }}>
+                    <div className="glass-card" style={{ padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', fontSize: '0.8rem', fontWeight: 600 }}>
+                        {showHistory ? 'Showing last 500 coordinates' : 'Real-time positioning'}
+                    </div>
+                </div>
+                <MapComponent 
+                    selectedRouteId="all" 
+                    notificationsEnabled={false} 
+                    showHistory={showHistory}
+                    historyPoints={historyPoints}
+                />
+            </motion.div>
 
             <div className="layout-equal">
                 {/* Driver Management */}

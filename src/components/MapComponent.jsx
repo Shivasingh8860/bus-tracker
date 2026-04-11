@@ -59,7 +59,7 @@ function SetBounds({ route }) {
     return null;
 }
 
-const MapComponent = ({ selectedRouteId, notificationsEnabled }) => {
+const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = false, historyPoints = [] }) => {
     const { routes, activeBuses, drivers } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
     const alertedBuses = React.useRef(new Set());
@@ -149,6 +149,24 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled }) => {
                     );
                 })}
 
+                {/* Route Analytics (Heatmap/History) */}
+                {showHistory && historyPoints.map((point, idx) => (
+                    <Marker 
+                        key={`hist-${idx}`} 
+                        position={[point.lat, point.lng]} 
+                        icon={new L.DivIcon({
+                            className: 'hist-dot',
+                            html: `<div style="background: var(--accent); width: 6px; height: 6px; border-radius: 50%; opacity: 0.3;"></div>`,
+                            iconSize: [6, 6],
+                            iconAnchor: [3, 3],
+                        })}
+                    >
+                        <Popup>
+                            <span style={{ fontSize: '0.7rem' }}>Recorded: {new Date(point.created_at).toLocaleString()}</span>
+                        </Popup>
+                    </Marker>
+                ))}
+
                 {activeBusesList.map((bus) => {
                     if (selectedRouteId !== 'all' && bus.routeId !== selectedRouteId) return null;
 
@@ -173,6 +191,15 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled }) => {
                                              <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>
                                         </div>
                                     </div>
+                                    
+                                    {/* Schedule Overlay */}
+                                    <div className="flex items-center gap-2 mb-3 px-2 py-1 rounded" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--panel-border)' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: (Date.now() - new Date(bus.updatedAt).getTime() > 120000) ? 'var(--danger)' : 'var(--accent)' }}></div>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                            {(Date.now() - new Date(bus.updatedAt).getTime() > 120000) ? 'SCHEDULE DELAYED' : 'ON TIME'}
+                                        </span>
+                                    </div>
+
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
                                     
                                     {userLocation && (() => {

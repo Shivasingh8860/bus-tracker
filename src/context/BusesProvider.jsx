@@ -8,6 +8,7 @@ export const BusesProvider = ({ children }) => {
     const [drivers, setDrivers] = useState([]);
     const [activeBuses, setActiveBuses] = useState({});
     const [broadcasts, setBroadcasts] = useState([]);
+    const lastLogTime = React.useRef({}); // Track log frequency per driver
 
     useEffect(() => {
         // Fetch Initial Data
@@ -121,13 +122,15 @@ export const BusesProvider = ({ children }) => {
     };
 
     const updateBusLocation = async (driverId, lat, lng, routeId, crowdStatus = 'Empty') => {
+        const now = Date.now();
+        
         // Optimistic UI update
         setActiveBuses(prev => ({
             ...prev,
             [driverId]: { lat, lng, routeId, crowdStatus, updatedAt: new Date().toISOString() }
         }));
 
-        // Push to cloud
+        // Push to live broadcast
         await supabase.from('active_buses').upsert({
             driver_id: driverId,
             lat,
@@ -136,6 +139,24 @@ export const BusesProvider = ({ children }) => {
             crowd_status: crowdStatus,
             updated_at: new Date().toISOString()
         });
+
+        // Smart Analytics Logging: only log once every 30 seconds to save data
+        if (!lastLogTime.current[driverId] || now - lastLogTime.current[driverId] > 30000) {
+            lastLogTime.current[driverId] = now;
+            await supabase.from('location_history').insert([{
+                driver_id: driverId,
+                route_id: routeId,
+                lat,
+                lng
+            }]);
+        }
+    };
+
+    const fetchHistory = async (routeId = null) => {
+        let query = supabase.from('location_history').select('*').order('created_at', { ascending: false }).limit(500);
+        if (routeId) query = query.eq('route_id', routeId);
+        const { data } = await query;
+        return data || [];
     };
 
     const stopBusTracking = async (driverId) => {
@@ -178,7 +199,8 @@ export const BusesProvider = ({ children }) => {
             drivers, addDriver: addDriverToDB,
             removeDriver: removeDriverFromDB,
             activeBuses, updateBusLocation, stopBusTracking,
-            broadcasts, sendBroadcast, removeBroadcast
+            broadcasts, sendBroadcast, removeBroadcast,
+            fetchHistory
         }}>
             {children}
         </BusesContext.Provider>
