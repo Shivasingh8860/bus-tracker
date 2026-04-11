@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBuses } from '../context/BusesContext';
 import MapComponent from '../components/MapComponent';
-import { Search, Compass, Info, Map as MapIcon, RefreshCw, BusFront } from 'lucide-react';
+import { Search, Compass, Info, Map as MapIcon, RefreshCw, BusFront, Volume2 } from 'lucide-react';
 
 const UserTracking = () => {
     const { routes, activeBuses } = useBuses();
     const [selectedRoute, setSelectedRoute] = useState('all');
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+    const [voiceEnabled, setVoiceEnabled] = useState(false);
 
     React.useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -26,6 +27,14 @@ const UserTracking = () => {
             });
         } else {
             setNotificationsEnabled(false);
+        }
+    };
+
+    const toggleVoice = () => {
+        setVoiceEnabled(!voiceEnabled);
+        if (!voiceEnabled) {
+            const msg = new SpeechSynthesisUtterance("Voice alerts enabled");
+            window.speechSynthesis.speak(msg);
         }
     };
 
@@ -51,7 +60,11 @@ const UserTracking = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     style={{ borderRadius: 'var(--radius-md)', minHeight: '600px', border: '1px solid var(--panel-border)' }}
                 >
-                    <MapComponent selectedRouteId={selectedRoute} notificationsEnabled={notificationsEnabled} />
+                    <MapComponent 
+                        selectedRouteId={selectedRoute} 
+                        notificationsEnabled={notificationsEnabled} 
+                        voiceEnabled={voiceEnabled}
+                    />
                 </motion.div>
 
                 <motion.div
@@ -114,13 +127,22 @@ const UserTracking = () => {
                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                             Get a notification when a bus is within 1km of your location.
                          </p>
-                         <button 
-                            className={`btn w-full ${notificationsEnabled ? 'btn-primary' : 'btn-outline'}`}
-                            onClick={toggleNotifications}
-                            style={{ fontSize: '0.85rem' }}
-                         >
-                            {notificationsEnabled ? '🔔 Alerts Active' : '🔕 Enable Alerts'}
-                         </button>
+                            <button
+                                className={`btn w-full justify-start mb-2 ${notificationsEnabled ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={toggleNotifications}
+                            >
+                                <Compass size={18} />
+                                <span>{notificationsEnabled ? 'Smart Alerts Active' : 'Enable Smart Alerts'}</span>
+                            </button>
+
+                            <button
+                                className={`btn w-full justify-start ${voiceEnabled ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={toggleVoice}
+                                style={{ borderColor: voiceEnabled ? 'transparent' : 'var(--accent)', color: voiceEnabled ? 'white' : 'var(--accent)' }}
+                            >
+                                <Volume2 size={18} />
+                                <span>{voiceEnabled ? 'Voice Alerts On' : 'Enable Voice Alerts'}</span>
+                            </button>
                     </div>
                 </motion.div>
             </div>

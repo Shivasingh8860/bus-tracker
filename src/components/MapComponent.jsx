@@ -59,10 +59,11 @@ function SetBounds({ route }) {
     return null;
 }
 
-const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = false, historyPoints = [] }) => {
+const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = false, showHistory = false, historyPoints = [] }) => {
     const { routes, activeBuses, drivers, trafficReports, submitTrafficReport } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
     const alertedBuses = React.useRef(new Set());
+    const spokenBuses = React.useRef(new Set());
     const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     const shareTracking = (driverId) => {
@@ -265,7 +266,20 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = fal
                                     </div>
                                     
                                     {userLocation && (() => {
-                                        const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng);
+                                        const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng) * 1000;
+                                        
+                                        // Voice Alert Logic
+                                        if (voiceEnabled && distance < 1000 && !spokenBuses.current.has(bus.driverId)) {
+                                            const utterance = new SpeechSynthesisUtterance(`Attention. Bus ${bus.driver?.busNumber || 'approaching'} is nearly here.`);
+                                            window.speechSynthesis.speak(utterance);
+                                            spokenBuses.current.add(bus.driverId);
+                                        }
+
+                                        // Reset spoken state if bus moves away
+                                        if (distance > 1500 && spokenBuses.current.has(bus.driverId)) {
+                                            spokenBuses.current.delete(bus.driverId);
+                                        }
+
                                         const avgSpeed = 20; // 20 km/h avg city speed
                                         const etaMinutes = Math.round((distance / avgSpeed) * 60);
                                         
