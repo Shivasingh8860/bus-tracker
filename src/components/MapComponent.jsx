@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useBuses } from '../context/BusesContext';
+import { MapPin, Compass, Maximize } from 'lucide-react';
 
 // Fix typical Leaflet marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,9 +60,53 @@ function SetBounds({ route }) {
     return null;
 }
 
+const LocateControl = () => {
+    const map = useMap();
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const toggleFullscreen = () => {
+        const mapElem = document.querySelector('.leaflet-container');
+        if (!isFullscreen) {
+            if (mapElem.requestFullscreen) mapElem.requestFullscreen();
+            else if (mapElem.webkitRequestFullscreen) mapElem.webkitRequestFullscreen();
+            else if (mapElem.msRequestFullscreen) mapElem.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+        setIsFullscreen(!isFullscreen);
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <button 
+                className="glass-card" 
+                onClick={toggleFullscreen}
+                style={{ padding: '0.6rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+            >
+                <Maximize size={18} color="white" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white' }}>{isFullscreen ? 'Exit Full' : 'Fullscreen'}</span>
+            </button>
+            <button 
+                className="glass-card" 
+                onClick={() => {
+                    map.locate({ setView: true, maxZoom: 16 });
+                    map.on('locationfound', (e) => {
+                        L.circle(e.latlng, { radius: e.accuracy, color: 'var(--accent)', fillOpacity: 0.1 }).addTo(map);
+                    });
+                }}
+                style={{ padding: '0.6rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+            >
+                <Compass size={18} color="var(--accent)" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white' }}>Locate Me</span>
+            </button>
+        </div>
+    );
+};
+
 const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = false, showHistory = false, historyPoints = [] }) => {
     const { routes, activeBuses, drivers, trafficReports, submitTrafficReport } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
+    const [mapType, setMapType] = useState('roadmap'); // roadmap or satellite
     const alertedBuses = React.useRef(new Set());
     const spokenBuses = React.useRef(new Set());
     const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -138,10 +183,29 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                 `}
             </style>
             <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
+                <div className="map-controls-floating" style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <button 
+                        className="glass-card" 
+                        onClick={() => setMapType(mapType === 'roadmap' ? 'satellite' : 'roadmap')}
+                        style={{ padding: '0.6rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+                    >
+                        <MapPin size={18} color="white" />
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'white' }}>{mapType === 'roadmap' ? 'Satellite' : 'Roadmap'}</span>
+                    </button>
+                    <LocateControl />
+                </div>
+
+                {mapType === 'roadmap' ? (
+                    <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                ) : (
+                    <TileLayer
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+                    />
+                )}
 
                 {displayRoutes.map((route) => {
                     if (!route.waypoints || route.waypoints.length === 0) return null;
