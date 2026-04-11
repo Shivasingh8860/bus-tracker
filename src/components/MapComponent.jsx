@@ -63,6 +63,14 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = fal
     const { routes, activeBuses, drivers } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
     const alertedBuses = React.useRef(new Set());
+    const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const handler = (e) => setIsDarkMode(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
 
     useEffect(() => {
         if ("geolocation" in navigator) {
@@ -125,6 +133,7 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = fal
             <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
 
                 {displayRoutes.map((route) => {
