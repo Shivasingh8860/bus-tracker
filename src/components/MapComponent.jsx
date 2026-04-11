@@ -59,9 +59,10 @@ function SetBounds({ route }) {
     return null;
 }
 
-const MapComponent = ({ selectedRouteId }) => {
+const MapComponent = ({ selectedRouteId, notificationsEnabled }) => {
     const { routes, activeBuses, drivers } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
+    const alertedBuses = React.useRef(new Set());
 
     useEffect(() => {
         if ("geolocation" in navigator) {
@@ -87,6 +88,28 @@ const MapComponent = ({ selectedRouteId }) => {
         const driver = drivers.find(d => d.id === driverId);
         return { driverId, driver, ...data };
     });
+
+    useEffect(() => {
+        if (!notificationsEnabled || !userLocation) return;
+
+        activeBusesList.forEach(bus => {
+            const distance = getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng);
+            const busId = bus.driverId;
+
+            if (distance < 1.0) { // 1 km geofence
+                if (!alertedBuses.current.has(busId)) {
+                    new Notification("Bus Nearby! 🚌", {
+                        body: `${bus.driver?.busNumber || 'A bus'} is currently ${distance.toFixed(2)}km away from you.`,
+                        icon: '/vite.svg'
+                    });
+                    alertedBuses.current.add(busId);
+                }
+            } else {
+                // Remove from alerted set if it moves away, so it can alert again if it returns
+                alertedBuses.current.delete(busId);
+            }
+        });
+    }, [activeBuses, userLocation, notificationsEnabled]);
 
     return (
         <div style={{ height: '100%', width: '100%', position: 'relative' }}>
@@ -135,7 +158,20 @@ const MapComponent = ({ selectedRouteId }) => {
                                 <div style={{ padding: '0.2rem', minWidth: '150px' }}>
                                     <div className="flex justify-between items-center mb-2">
                                         <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', margin: 0 }}>{bus.driver?.busNumber || 'Bus'}</p>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>
+                                        <div className="flex items-center gap-2">
+                                             <span style={{ 
+                                                fontSize: '0.6rem', 
+                                                padding: '2px 6px', 
+                                                borderRadius: '4px',
+                                                background: bus.crowdStatus === 'Full' ? 'var(--danger)' : bus.crowdStatus === 'Substantial' ? 'var(--warning)' : 'var(--accent)',
+                                                color: 'white',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase'
+                                             }}>
+                                                {bus.crowdStatus || 'Empty'}
+                                             </span>
+                                             <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>
+                                        </div>
                                     </div>
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
                                     

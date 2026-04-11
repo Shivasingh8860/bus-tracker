@@ -7,6 +7,19 @@ import { Search, Compass, Info, Map as MapIcon, RefreshCw, BusFront } from 'luci
 const UserTracking = () => {
     const { routes, activeBuses } = useBuses();
     const [selectedRoute, setSelectedRoute] = useState('all');
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+    const toggleNotifications = () => {
+        if (!notificationsEnabled) {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    setNotificationsEnabled(true);
+                }
+            });
+        } else {
+            setNotificationsEnabled(false);
+        }
+    };
 
     const activeCount = Object.keys(activeBuses).length;
 
@@ -30,7 +43,7 @@ const UserTracking = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     style={{ borderRadius: 'var(--radius-md)', minHeight: '600px', border: '1px solid var(--panel-border)' }}
                 >
-                    <MapComponent selectedRouteId={selectedRoute} />
+                    <MapComponent selectedRouteId={selectedRoute} notificationsEnabled={notificationsEnabled} />
                 </motion.div>
 
                 <motion.div
@@ -83,6 +96,23 @@ const UserTracking = () => {
                                 )
                             })}
                         </div>
+                    </div>
+
+                    <div className="glass-card" style={{ border: '1px solid var(--primary-glow)' }}>
+                         <div className="flex items-center gap-2 mb-3">
+                            <RefreshCw size={16} color="var(--primary)" />
+                            <h3 style={{ fontSize: '0.9rem', margin: 0 }}>Smart Alerts</h3>
+                         </div>
+                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                            Get a notification when a bus is within 1km of your location.
+                         </p>
+                         <button 
+                            className={`btn w-full ${notificationsEnabled ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={toggleNotifications}
+                            style={{ fontSize: '0.85rem' }}
+                         >
+                            {notificationsEnabled ? '🔔 Alerts Active' : '🔕 Enable Alerts'}
+                         </button>
                     </div>
                 </motion.div>
             </div>

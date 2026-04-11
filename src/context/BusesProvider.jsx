@@ -26,7 +26,13 @@ export const BusesProvider = ({ children }) => {
             if (bData) {
                 const busMap = {};
                 bData.forEach(b => {
-                    busMap[b.driver_id] = { lat: b.lat, lng: b.lng, routeId: b.route_id, updatedAt: b.updated_at };
+                    busMap[b.driver_id] = { 
+                        lat: b.lat, 
+                        lng: b.lng, 
+                        routeId: b.route_id, 
+                        crowdStatus: b.crowd_status || 'Empty',
+                        updatedAt: b.updated_at 
+                    };
                 });
                 setActiveBuses(busMap);
             }
@@ -47,7 +53,13 @@ export const BusesProvider = ({ children }) => {
                     const b = payload.new;
                     setActiveBuses(prev => ({
                         ...prev,
-                        [b.driver_id]: { lat: b.lat, lng: b.lng, routeId: b.route_id, updatedAt: b.updated_at }
+                        [b.driver_id]: { 
+                            lat: b.lat, 
+                            lng: b.lng, 
+                            routeId: b.route_id, 
+                            crowdStatus: b.crowd_status || 'Empty',
+                            updatedAt: b.updated_at 
+                        }
                     }));
                 }
             })
@@ -92,11 +104,11 @@ export const BusesProvider = ({ children }) => {
         }
     };
 
-    const updateBusLocation = async (driverId, lat, lng, routeId) => {
+    const updateBusLocation = async (driverId, lat, lng, routeId, crowdStatus = 'Empty') => {
         // Optimistic UI update
         setActiveBuses(prev => ({
             ...prev,
-            [driverId]: { lat, lng, routeId, updatedAt: new Date().toISOString() }
+            [driverId]: { lat, lng, routeId, crowdStatus, updatedAt: new Date().toISOString() }
         }));
 
         // Push to cloud
@@ -105,6 +117,7 @@ export const BusesProvider = ({ children }) => {
             lat,
             lng,
             route_id: routeId,
+            crowd_status: crowdStatus,
             updated_at: new Date().toISOString()
         });
     };

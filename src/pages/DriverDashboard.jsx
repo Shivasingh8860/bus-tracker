@@ -11,6 +11,7 @@ const DriverDashboard = () => {
     const [selectedRoute, setSelectedRoute] = useState(routes[0]?.id || '');
     const [isTracking, setIsTracking] = useState(false);
     const [currentLocation, setCurrentLocation] = useState(null);
+    const [crowdStatus, setCrowdStatus] = useState('Empty');
 
     const toggleTracking = useCallback(() => {
         if (isTracking) {
@@ -31,7 +32,7 @@ const DriverDashboard = () => {
                         (position) => {
                             const { latitude, longitude } = position.coords;
                             setCurrentLocation({ lat: latitude, lng: longitude });
-                            updateBusLocation(user.id, latitude, longitude, selectedRoute);
+                            updateBusLocation(user.id, latitude, longitude, selectedRoute, crowdStatus);
                         },
                         (err) => console.error('GPS error', err),
                         { enableHighAccuracy: true, timeout: 5000 }
@@ -45,7 +46,7 @@ const DriverDashboard = () => {
             }
         }
         return () => clearInterval(interval);
-    }, [isTracking, selectedRoute, user.id, updateBusLocation]);
+    }, [isTracking, selectedRoute, user.id, updateBusLocation, crowdStatus]);
 
     return (
         <div className="container" style={{ maxWidth: '800px', paddingBottom: '4rem' }}>
@@ -65,17 +66,40 @@ const DriverDashboard = () => {
                     </div>
                 </div>
 
-                <div className="mb-8">
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
-                    <select
-                        value={selectedRoute}
-                        onChange={(e) => setSelectedRoute(e.target.value)}
-                        disabled={isTracking}
-                    >
-                        {routes.map(r => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                    </select>
+                <div className="layout-equal mb-8">
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
+                        <select
+                            value={selectedRoute}
+                            onChange={(e) => setSelectedRoute(e.target.value)}
+                            disabled={isTracking}
+                        >
+                            {routes.map(r => (
+                                <option key={r.id} value={r.id}>{r.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Capacity Status</label>
+                        <div className="flex gap-2">
+                             {[
+                                { id: 'Empty', color: 'var(--accent)' },
+                                { id: 'Substantial', color: 'var(--warning)' },
+                                { id: 'Full', color: 'var(--danger)' }
+                             ].map(status => (
+                                <button
+                                    key={status.id}
+                                    type="button"
+                                    className={`btn ${crowdStatus === status.id ? 'btn-primary' : 'btn-outline'}`}
+                                    style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem', borderColor: crowdStatus === status.id ? 'transparent' : status.color, color: crowdStatus === status.id ? 'white' : status.color }}
+                                    onClick={() => setCrowdStatus(status.id)}
+                                >
+                                    {status.id}
+                                </button>
+                             ))}
+                        </div>
+                    </div>
                 </div>
 
                 {isTracking && (
