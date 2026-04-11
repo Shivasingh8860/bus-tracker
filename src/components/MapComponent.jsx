@@ -60,7 +60,7 @@ function SetBounds({ route }) {
     return null;
 }
 
-const RoadSnappedPolyline = ({ waypoints, color, weight, opacity, dashArray }) => {
+const RoadSnappedPolyline = ({ waypoints, color, weight, opacity, dashArray, congestionScore = 0 }) => {
     const [path, setPath] = useState([]);
 
     useEffect(() => {
@@ -74,7 +74,6 @@ const RoadSnappedPolyline = ({ waypoints, color, weight, opacity, dashArray }) =
                     const snapped = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                     setPath(snapped);
                 } else {
-                    // Fallback to straight lines
                     setPath(waypoints.map(wp => [wp.lat, wp.lng]));
                 }
             })
@@ -84,7 +83,11 @@ const RoadSnappedPolyline = ({ waypoints, color, weight, opacity, dashArray }) =
     }, [waypoints]);
 
     if (path.length === 0) return null;
-    return <Polyline positions={path} color={color} weight={weight} opacity={opacity} dashArray={dashArray} />;
+
+    // Professional Congestion Logic
+    const routeColor = congestionScore > 5 ? 'var(--danger)' : congestionScore > 2 ? 'var(--warning)' : color;
+    
+    return <Polyline positions={path} color={routeColor} weight={weight} opacity={opacity} dashArray={dashArray} />;
 };
 
 const LocateControl = () => {
@@ -133,10 +136,35 @@ const LocateControl = () => {
 const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = false, showHistory = false, historyPoints = [] }) => {
     const { routes, activeBuses, drivers, trafficReports, submitTrafficReport } = useBuses();
     const [userLocation, setUserLocation] = useState(null);
-    const [mapType, setMapType] = useState('roadmap'); // roadmap or satellite
+    const [mapType, setMapType] = useState('roadmap');
+    const [alarmStopId, setAlarmStopId] = useState(null);
     const alertedBuses = React.useRef(new Set());
     const spokenBuses = React.useRef(new Set());
     const [isDarkMode, setIsDarkMode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    // SOS & Alarm Watchdog
+    useEffect(() => {
+        if (!userLocation || !alarmStopId) return;
+        
+        // Find the stop coordinates
+        let targetStop = null;
+        routes.forEach(r => {
+            const stop = r.waypoints.find(wp => `${r.id}-${wp.lat}-${wp.lng}` === alarmStopId);
+            if (stop) targetStop = stop;
+        });
+
+        if (targetStop) {
+            const dist = getDistance(userLocation.lat, userLocation.lng, targetStop.lat, targetStop.lng);
+            if (dist < 0.5) { // 500m
+                 // Trigger Alarm
+                 const msg = new SpeechSynthesisUtterance("Wake up! You are arriving at your stop.");
+                 window.speechSynthesis.speak(msg);
+                 if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+                 alert("⏰ STOP ARRIVAL ALARM: You are within 500m of your destination!");
+                 setAlarmStopId(null);
+            }
+        }
+    }, [userLocation, alarmStopId, routes]);
 
     const shareTracking = (driverId) => {
         const url = `${window.location.origin}${window.location.pathname}?track=${driverId}`;
@@ -236,9 +264,12 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
 
                 {displayRoutes.map((route) => {
                     if (!route.waypoints || route.waypoints.length === 0) return null;
-                    const positions = route.waypoints.map(wp => [wp.lat, wp.lng]);
-                    
                     const isFocused = selectedRouteId === 'all' || selectedRouteId === route.id;
+
+                    // Calculate total traffic reports for this route
+                    const routeCongestion = Object.values(activeBuses)
+                        .filter(b => b.routeId === route.id)
+                        .reduce((acc, b) => acc + (trafficReports[b.driverId] || 0), 0);
 
                     return (
                         <React.Fragment key={route.id}>
@@ -248,22 +279,44 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                 weight={isFocused ? 5 : 2} 
                                 opacity={isFocused ? 0.8 : 0.05} 
                                 dashArray={isFocused ? "0" : "8, 8"} 
+                                congestionScore={routeCongestion}
                             />
-                            {route.waypoints.map((wp, idx) => (
-                                <Marker 
-                                    key={`${route.id}-wp-${idx}`} 
-                                    position={[wp.lat, wp.lng]} 
-                                    icon={stationIcon}
-                                    opacity={isFocused ? 1 : 0.1}
-                                >
-                                    <Popup className="bus-popup">
-                                        <div style={{ padding: '0.2rem' }}>
-                                            <p style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{wp.name || `Stop ${idx + 1}`}</p>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{route.name}</p>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                            ))}
+                            {route.waypoints.map((wp, idx) => {
+                                const stopId = `${route.id}-${wp.lat}-${wp.lng}`;
+                                const isAlarmSet = alarmStopId === stopId;
+
+                                return (
+                                    <Marker 
+                                        key={stopId} 
+                                        position={[wp.lat, wp.lng]} 
+                                        icon={stationIcon}
+                                        opacity={isFocused ? 1 : 0.1}
+                                        eventHandlers={{
+                                            click: () => {
+                                                setAlarmStopId(isAlarmSet ? null : stopId);
+                                                if (!isAlarmSet && navigator.vibrate) navigator.vibrate(50);
+                                            }
+                                        }}
+                                    >
+                                        <Popup className="bus-popup">
+                                            <div style={{ padding: '0.2rem', textAlign: 'center' }}>
+                                                <p style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{wp.name || `Stop ${idx + 1}`}</p>
+                                                <p style={{ margin: '0.25rem 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{route.name}</p>
+                                                <button 
+                                                    className={`btn w-full mt-2 ${isAlarmSet ? 'btn-danger' : 'btn-primary'}`}
+                                                    style={{ fontSize: '0.7rem', padding: '0.4rem' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAlarmStopId(isAlarmSet ? null : stopId);
+                                                    }}
+                                                >
+                                                    {isAlarmSet ? 'Cancel Alarm' : '⏰ Wake Me Up Here'}
+                                                </button>
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                )
+                            })}
                             {selectedRouteId !== 'all' && selectedRouteId === route.id && <SetBounds route={route} />}
                         </React.Fragment>
                     );
@@ -291,6 +344,7 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                     const lastUpdate = new Date(bus.updatedAt).getTime();
                     const isStale = (Date.now() - lastUpdate) > 120000; // 2 minutes staleness
                     const isFocus = selectedRouteId === 'all' || selectedRouteId === bus.routeId;
+                    const isSOS = bus.sosActive || (trafficReports[bus.driverId] > 10);
                     
                     const dynamicBusIcon = new L.DivIcon({
                         className: 'custom-bus-icon',
@@ -300,10 +354,11 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, voiceEnabled = fa
                                 opacity: ${isFocus ? '1' : '0.15'};
                                 transition: all 0.4s ease;
                                 transform: scale(${isFocus ? '1' : '0.8'});
+                                animation: ${isSOS ? 'pulse-danger 0.5s infinite' : 'none'};
                             ">
-                                <div style="background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--primary-glow); border: 2px solid white; transform: translate(-50%, -50%); cursor: pointer; position: relative;">
-                                    ${isStale ? '⚠️' : '🚌'}
-                                    ${isStale ? '' : '<div style="position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; animate: pulse 2s infinite;"></div>'}
+                                <div style="background: ${isSOS ? 'var(--danger)' : 'var(--primary)'}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px ${isSOS ? 'var(--danger)' : 'var(--primary-glow)'}; border: 2px solid white; transform: translate(-50%, -50%); cursor: pointer; position: relative;">
+                                    ${isSOS ? '🚨' : (isStale ? '⚠️' : '🚌')}
+                                    ${!isSOS && !isStale ? '<div style="position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #10b981; border: 2px solid white; border-radius: 50%; animate: pulse 2s infinite;"></div>' : ''}
                                 </div>
                             </div>
                         `,

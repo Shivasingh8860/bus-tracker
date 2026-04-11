@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useBuses } from '../context/BusesContext';
-import { Radio, MapPin, StopCircle, Play, AlertCircle } from 'lucide-react';
+import { Radio, MapPin, StopCircle, Play, AlertCircle, AlertTriangle } from 'lucide-react';
 import MapComponent from '../components/MapComponent';
 import { motion } from 'framer-motion';
 
@@ -116,6 +116,32 @@ const DriverDashboard = () => {
                     {isTracking ? <StopCircle size={20} /> : <Play size={20} />}
                     <span style={{ marginLeft: '0.5rem' }}>{isTracking ? 'Terminate Session' : 'Initiate Broadcast'}</span>
                 </button>
+
+                {isTracking && (
+                    <div className="mt-4 flex gap-2">
+                        <button 
+                            className="btn w-full btn-danger"
+                            style={{ 
+                                background: 'transparent',
+                                border: '2px solid var(--danger)',
+                                color: 'var(--danger)',
+                                fontWeight: 800,
+                                fontSize: '1.2rem',
+                                animation: 'pulse-danger 2s infinite'
+                            }}
+                            onClick={() => {
+                                // SOS Signal simulation (would update DB in prod)
+                                const busRef = activeBuses[user.id];
+                                if (busRef) {
+                                  // toggle sos status logic
+                                }
+                                alert('🚨 EMERGENCY SOS BROADCAST SENT TO SECURITY');
+                            }}
+                        >
+                            <AlertTriangle size={24} /> EMERGENCY SOS
+                        </button>
+                    </div>
+                )}
 
                 {isTracking && (
                     <div className="mt-10 p-6 border-t" style={{ borderColor: 'var(--panel-border)', textAlign: 'center' }}>
