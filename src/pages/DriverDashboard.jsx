@@ -116,6 +116,22 @@ const DriverDashboard = () => {
                     {isTracking ? <StopCircle size={20} /> : <Play size={20} />}
                     <span style={{ marginLeft: '0.5rem' }}>{isTracking ? 'Terminate Session' : 'Initiate Broadcast'}</span>
                 </button>
+
+                {isTracking && (
+                    <div className="mt-10 p-6 border-t" style={{ borderColor: 'var(--panel-border)', textAlign: 'center' }}>
+                        <h4 className="mb-4" style={{ color: 'var(--text-secondary)' }}>Passenger Check-In Station</h4>
+                        <div className="glass-card d-inline-block" style={{ display: 'inline-block', background: 'white', padding: '15px', borderRadius: '12px' }}>
+                            <img 
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${window.location.origin}/checkin/${user.id}`)}`} 
+                                alt="Boarding QR"
+                                style={{ display: 'block' }}
+                            />
+                        </div>
+                        <p className="mt-4" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '300px', margin: '1rem auto' }}>
+                           Display this QR to your passengers. When they scan it, their entry/exit will automatically update your bus's occupancy status.
+                        </p>
+                    </div>
+                )}
             </motion.div>
         </div>
     );

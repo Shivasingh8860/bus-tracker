@@ -34,6 +34,7 @@ export const BusesProvider = ({ children }) => {
                         lng: b.lng, 
                         routeId: b.route_id, 
                         crowdStatus: b.crowd_status || 'Empty',
+                        passengerCount: b.passenger_count || 0,
                         updatedAt: b.updated_at 
                     };
                 });
@@ -73,6 +74,7 @@ export const BusesProvider = ({ children }) => {
                             lng: b.lng, 
                             routeId: b.route_id, 
                             crowdStatus: b.crowd_status || 'Empty',
+                            passengerCount: b.passenger_count || 0,
                             updatedAt: b.updated_at 
                         }
                     }));
@@ -183,6 +185,23 @@ export const BusesProvider = ({ children }) => {
         }
     };
 
+    const updatePassengerCount = async (driverId, delta) => {
+        const bus = activeBuses[driverId];
+        if (!bus) return;
+
+        const newCount = Math.max(0, (bus.passengerCount || 0) + delta);
+        
+        // Auto-calculate crowd status
+        let newStatus = 'Empty';
+        if (newCount > 20) newStatus = 'Full';
+        else if (newCount > 5) newStatus = 'Substantial';
+
+        await supabase.from('active_buses').update({
+            passenger_count: newCount,
+            crowd_status: newStatus
+        }).eq('driver_id', driverId);
+    };
+
     const fetchHistory = async (routeId = null) => {
         let query = supabase.from('location_history').select('*').order('created_at', { ascending: false }).limit(500);
         if (routeId) query = query.eq('route_id', routeId);
@@ -232,7 +251,8 @@ export const BusesProvider = ({ children }) => {
             activeBuses, updateBusLocation, stopBusTracking,
             broadcasts, sendBroadcast, removeBroadcast,
             fetchHistory,
-            trafficReports, submitTrafficReport
+            trafficReports, submitTrafficReport,
+            updatePassengerCount
         }}>
             {children}
         </BusesContext.Provider>

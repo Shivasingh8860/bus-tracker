@@ -224,20 +224,44 @@ const MapComponent = ({ selectedRouteId, notificationsEnabled, showHistory = fal
 
                                     <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
 
-                                    {/* Actions */}
-                                    <div className="flex gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'var(--panel-border)' }}>
-                                        <button 
-                                            onClick={() => submitTrafficReport(bus.driverId)}
-                                            style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
+                                    {/* Action Grid */}
+                                    <div className="flex flex-col gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => submitTrafficReport(bus.driverId)}
+                                                style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
+                                            >
+                                                Traffic!
+                                            </button>
+                                            <button 
+                                                onClick={() => shareTracking(bus.driverId)}
+                                                style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--bg-input)', border: '1px solid var(--panel-border)', cursor: 'pointer', color: 'var(--text-main)' }}
+                                            >
+                                                Share Trip
+                                            </button>
+                                        </div>
+                                        <a 
+                                            href={`https://wa.me/?text=${encodeURIComponent(`Hey! I'm tracking Bus #${bus.driverId}. It's currently at ${bus.crowdStatus} capacity with ${bus.passengerCount || 0} passengers. Track it live here: ${window.location.origin}/?track=${bus.driverId}`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ 
+                                                width: '100%', 
+                                                padding: '0.6rem', 
+                                                fontSize: '0.75rem', 
+                                                borderRadius: '4px', 
+                                                background: '#25D366', 
+                                                color: 'white', 
+                                                textDecoration: 'none', 
+                                                textAlign: 'center',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px'
+                                            }}
                                         >
-                                            Report Traffic
-                                        </button>
-                                        <button 
-                                            onClick={() => shareTracking(bus.driverId)}
-                                            style={{ flex: 1, padding: '0.4rem', fontSize: '0.65rem', borderRadius: '4px', background: 'var(--primary)', border: 'none', cursor: 'pointer', color: 'white' }}
-                                        >
-                                            Share Trip
-                                        </button>
+                                            🔔 Notify on WhatsApp
+                                        </a>
                                     </div>
                                     
                                     {userLocation && (() => {
