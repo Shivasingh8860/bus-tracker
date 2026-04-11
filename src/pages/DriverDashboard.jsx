@@ -22,18 +22,10 @@ const DriverDashboard = () => {
         }
     }, [isTracking, stopBusTracking, user.id]);
 
-
     useEffect(() => {
         let interval;
         if (isTracking) {
-            // Real Geolocation explicitly every 3 seconds
             if ("geolocation" in navigator) {
-                const geoOptions = {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                };
-
                 const fetchLocation = () => {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
@@ -41,73 +33,40 @@ const DriverDashboard = () => {
                             setCurrentLocation({ lat: latitude, lng: longitude });
                             updateBusLocation(user.id, latitude, longitude, selectedRoute);
                         },
-                        (err) => {
-                            console.error('High accuracy GPS failed, trying fallback...', err);
-
-                            // Fallback to standard accuracy
-                            navigator.geolocation.getCurrentPosition(
-                                (fbPosition) => {
-                                    const { latitude, longitude } = fbPosition.coords;
-                                    setCurrentLocation({ lat: latitude, lng: longitude });
-                                    updateBusLocation(user.id, latitude, longitude, selectedRoute);
-                                },
-                                (fbErr) => {
-                                    console.error('All GPS failed.', fbErr);
-                                },
-                                { enableHighAccuracy: false, timeout: 5000 }
-                            );
-                        },
-                        geoOptions
+                        (err) => console.error('GPS error', err),
+                        { enableHighAccuracy: true, timeout: 5000 }
                     );
                 };
-
-                // Fetch immediately on start
                 fetchLocation();
-
-                // Then fetch every 3 seconds
-                interval = setInterval(fetchLocation, 3000);
-
+                interval = setInterval(fetchLocation, 5000);
             } else {
-                alert("Geolocation not supported by this browser.");
-                setTimeout(() => toggleTracking(), 0);
+                alert("Geolocation not supported.");
+                setIsTracking(false);
             }
         }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isTracking, selectedRoute, user.id, updateBusLocation, toggleTracking]);
-
+        return () => clearInterval(interval);
+    }, [isTracking, selectedRoute, user.id, updateBusLocation]);
 
     return (
-        <div className="flex justify-center" style={{ minHeight: '60vh' }}>
+        <div className="container" style={{ maxWidth: '800px', paddingBottom: '4rem' }}>
             <motion.div
                 className="glass-card"
-                style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column' }}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
             >
-                <div className="header-responsive mb-6 border-b" style={{ paddingBottom: '1rem', borderColor: 'var(--panel-border)' }}>
+                <div className="flex justify-between items-start mb-8 border-b" style={{ paddingBottom: '1.5rem', borderColor: 'var(--panel-border)' }}>
                     <div>
-                        <h2 className="title-gradient">Driver Terminal</h2>
-                        <p style={{ color: 'var(--text-muted)' }}>ID: {user.id} | Bus: {user.busNumber}</p>
+                        <h2 className="title-gradient" style={{ fontSize: '1.5rem' }}>Driver Station</h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Bus {user.busNumber} • {user.id}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span style={{
-                            display: 'inline-block',
-                            width: '12px', height: '12px',
-                            borderRadius: '50%',
-                            background: isTracking ? 'var(--accent)' : 'var(--danger)',
-                            boxShadow: isTracking ? '0 0 10px var(--accent)' : 'none'
-                        }}></span>
-                        <span style={{ fontWeight: 500, color: isTracking ? 'var(--accent)' : 'var(--danger)' }}>
-                            {isTracking ? 'Broadcasting Location' : 'Offline'}
-                        </span>
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${isTracking ? 'bg-accent/10 border-accent/20' : 'bg-danger/10 border-danger/20'}`} style={{ border: '1px solid transparent' }}>
+                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isTracking ? 'var(--accent)' : 'var(--danger)' }}></span>
+                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: isTracking ? 'var(--accent)' : 'var(--danger)' }}>{isTracking ? 'LIVE' : 'OFFLINE'}</span>
                     </div>
                 </div>
 
-                <div className="mb-6">
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Assigned Route</label>
+                <div className="mb-8">
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
                     <select
                         value={selectedRoute}
                         onChange={(e) => setSelectedRoute(e.target.value)}
@@ -119,43 +78,20 @@ const DriverDashboard = () => {
                     </select>
                 </div>
 
-
-                {currentLocation && isTracking && (
-                    <div className="mb-6 p-4 rounded-xl fade-in" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--accent)' }}>
-                        <h4 style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <MapPin size={18} color="var(--accent)" /> Current Location
-                        </h4>
-                        <div className="mt-2 form-grid">
-                            <div>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Latitude</p>
-                                <p style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{currentLocation.lat.toFixed(6)}</p>
-                            </div>
-                            <div>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Longitude</p>
-                                <p style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{currentLocation.lng.toFixed(6)}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {isTracking && (
-                    <div className="mb-6 fade-in" style={{ height: '300px', borderRadius: '12px', overflow: 'hidden' }}>
-                        <MapComponent selectedRouteId={selectedRoute} />
-                    </div>
+                   <div className="mb-8 overflow-hidden fade-in" style={{ height: '350px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--panel-border)' }}>
+                       <MapComponent selectedRouteId={selectedRoute} />
+                   </div>
                 )}
 
                 <button
-                    className={`btn ${isTracking ? 'btn-danger' : 'btn-primary'}`}
-                    style={{ width: '100%', padding: '1rem', marginTop: 'auto' }}
+                    className={`btn w-full ${isTracking ? 'btn-danger' : 'btn-primary'}`}
+                    style={{ padding: '1rem', fontVariantCaps: 'all-small-caps', fontSize: '1.1rem', letterSpacing: '0.05em' }}
                     onClick={toggleTracking}
                 >
-                    {isTracking ? (
-                        <><StopCircle size={20} /> Stop Transmitting</>
-                    ) : (
-                        <><Play size={20} /> Start Route Tracking</>
-                    )}
+                    {isTracking ? <StopCircle size={20} /> : <Play size={20} />}
+                    <span style={{ marginLeft: '0.5rem' }}>{isTracking ? 'Terminate Session' : 'Initiate Broadcast'}</span>
                 </button>
-
             </motion.div>
         </div>
     );

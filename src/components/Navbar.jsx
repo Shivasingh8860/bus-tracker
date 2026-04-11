@@ -14,53 +14,36 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="glass" style={{ margin: '1rem', padding: '1rem 2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="header-responsive" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                <Link to="/" className="flex items-center gap-2">
-                    <motion.div
-                        initial={{ rotate: -10 }}
-                        animate={{ rotate: 0 }}
-                        transition={{ type: 'spring', stiffness: 200 }}
-                    >
-                        <Bus size={32} color="var(--primary)" />
-                    </motion.div>
-                    <h2 className="title-gradient" style={{ margin: 0 }}>CampusTracker</h2>
+        <nav className="glass-card" style={{ margin: '1.5rem auto', maxWidth: '1200px', width: '92%', padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-lg)' }}>
+            <div className="flex justify-between items-center">
+                <Link to="/" className="flex items-center gap-3">
+                    <Bus size={28} color="var(--primary)" />
+                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Campus<span style={{ color: 'var(--primary)' }}>Tracker</span></h2>
                 </Link>
-                <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                    <Link to="/" className="btn btn-outline" style={{ border: 'none' }}>
-                        <Map size={18} /> Public Map
+
+                <div className="flex items-center gap-2">
+                    <Link to="/" className="btn btn-outline" style={{ border: 'none', fontSize: '0.9rem' }}>
+                        <Map size={18} /> Public
                     </Link>
 
                     {user ? (
                         <>
                             {user.role === 'admin' ? (
-                                <Link to="/admin" className="btn btn-outline" style={{ border: 'none' }}>
-                                    <Shield size={18} /> Admin Dashboard
+                                <Link to="/admin" className="btn btn-outline" style={{ border: 'none', fontSize: '0.9rem' }}>
+                                    <Shield size={18} /> Admin
                                 </Link>
                             ) : (
-                                <Link to="/driver" className="btn btn-outline" style={{ border: 'none' }}>
-                                    <MapPin size={18} /> Driver App
+                                <Link to="/driver" className="btn btn-outline" style={{ border: 'none', fontSize: '0.9rem' }}>
+                                    <MapPin size={18} /> Drive
                                 </Link>
                             )}
-                            <div
-                                style={{
-                                    height: '24px',
-                                    width: '1px',
-                                    background: 'rgba(255,255,255,0.2)'
-                                }}
-                            />
-                            <span style={{ color: 'var(--text-muted)' }}>Hello, {user.name || (user.role === 'admin' && 'Admin')}</span>
-                            <button
-                                onClick={handleLogout}
-                                className="btn btn-outline"
-                                style={{ border: 'none', color: 'var(--danger)' }}
-                            >
-                                <LogOut size={18} /> Logout
+                            <button onClick={handleLogout} className="btn btn-danger" style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}>
+                                <LogOut size={16} /> Logout
                             </button>
                         </>
                     ) : (
-                        <Link to="/login" className="btn btn-primary">
-                            Login Portal
+                        <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem' }}>
+                            Sign In
                         </Link>
                     )}
                 </div>

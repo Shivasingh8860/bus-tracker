@@ -119,9 +119,19 @@ export const BusesProvider = ({ children }) => {
         await supabase.from('active_buses').delete().eq('driver_id', driverId);
     };
 
+    const removeRouteFromDB = async (id) => {
+        const { error } = await supabase.from('routes').delete().eq('id', id);
+        if (!error) {
+            setRoutes(prev => prev.filter(r => r.id !== id));
+        } else {
+            console.error("Error removing route from Supabase:", error);
+            alert("Database Error! Failed to delete route.");
+        }
+    };
+
     return (
         <BusesContext.Provider value={{
-            routes, addRoute: addRouteToDB,
+            routes, addRoute: addRouteToDB, removeRoute: removeRouteFromDB,
             drivers, addDriver: addDriverToDB,
             removeDriver: removeDriverFromDB,
             activeBuses, updateBusLocation, stopBusTracking

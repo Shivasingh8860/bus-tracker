@@ -26,7 +26,6 @@ const Login = () => {
                 setError('Invalid admin credentials.');
             }
         } else {
-            // Driver login
             const driver = drivers.find(d => d.id === userId);
             if (driver && password === driver.password) {
                 login('driver', driver);
@@ -38,86 +37,66 @@ const Login = () => {
     };
 
     return (
-        <div className="flex justify-center items-center" style={{ minHeight: '70vh' }}>
+        <div className="flex justify-center items-center" style={{ minHeight: '70vh', padding: '1rem' }}>
             <motion.div
                 className="glass-card"
-                style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}
-                initial={{ opacity: 0, y: 20 }}
+                style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <div className="flex flex-col items-center mb-6">
-                    <div className="flex gap-4 mb-6" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '12px' }}>
-                        <button
-                            className={`btn ${role === 'driver' ? 'btn-primary' : 'btn-outline'}`}
-                            style={role === 'driver' ? {} : { border: 'none' }}
-                            onClick={() => setRole('driver')}
-                        >
-                            <BusFront size={18} /> Driver Access
-                        </button>
-                        <button
-                            className={`btn ${role === 'admin' ? 'btn-primary' : 'btn-outline'}`}
-                            style={role === 'admin' ? {} : { border: 'none' }}
-                            onClick={() => setRole('admin')}
-                        >
-                            <Shield size={18} /> Admin Portal
-                        </button>
-                    </div>
-                    <h2 className="title-gradient">
-                        {role === 'driver' ? 'Driver Authentication' : 'Admin Login'}
-                    </h2>
+                <div className="mb-8 text-center">
+                    <h2 className="title-gradient" style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Access Portal</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Choose your role to continue</p>
+                </div>
+
+                <div className="flex gap-2 mb-8" style={{ background: 'var(--bg-input)', padding: '0.3rem', borderRadius: 'var(--radius-sm)' }}>
+                    <button
+                        className={`btn w-full ${role === 'driver' ? 'btn-primary' : ''}`}
+                        style={role === 'driver' ? {} : { background: 'transparent', color: 'var(--text-muted)' }}
+                        onClick={() => setRole('driver')}
+                    >
+                        Driver
+                    </button>
+                    <button
+                        className={`btn w-full ${role === 'admin' ? 'btn-primary' : ''}`}
+                        style={role === 'admin' ? {} : { background: 'transparent', color: 'var(--text-muted)' }}
+                        onClick={() => setRole('admin')}
+                    >
+                        Admin
+                    </button>
                 </div>
 
                 {error && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.4)',
-                            color: 'var(--danger)',
-                            padding: '0.75rem',
-                            borderRadius: '8px',
-                            marginBottom: '1.5rem',
-                            textAlign: 'center'
-                        }}
-                    >
+                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
                         {error}
-                    </motion.div>
+                    </div>
                 )}
 
-                <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <form onSubmit={handleLogin} className="flex flex-col gap-5">
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                            {role === 'driver' ? 'Driver ID' : 'Admin Username'}
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                            <UserCircle size={20} color="var(--text-muted)" style={{ position: 'absolute', top: '12px', left: '12px' }} />
-                            <input
-                                type="text"
-                                style={{ paddingLeft: '2.5rem' }}
-                                value={userId}
-                                onChange={(e) => setUserId(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Identity ID</label>
+                        <input
+                            type="text"
+                            placeholder={role === 'driver' ? "D101" : "admin"}
+                            value={userId}
+                            onChange={(e) => setUserId(e.target.value)}
+                            required
+                        />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Password</label>
-                        <div style={{ position: 'relative' }}>
-                            <Lock size={20} color="var(--text-muted)" style={{ position: 'absolute', top: '12px', left: '12px' }} />
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                style={{ paddingLeft: '2.5rem' }}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Security Key</label>
+                        <input
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
                     </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%', padding: '1rem' }}>
-                        Secure Login
+                    <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.9rem' }}>
+                        Establish Connection
                     </button>
                 </form>
             </motion.div>

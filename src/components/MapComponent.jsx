@@ -15,23 +15,23 @@ L.Icon.Default.mergeOptions({
 // Custom Icons
 const busIcon = new L.DivIcon({
     className: 'custom-bus-icon',
-    html: `<div style="background: var(--primary); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--primary); border: 2px solid white; transform: translate(-50%, -50%);">🚌</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    html: `<div style="background: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--primary-glow); border: 2px solid white; transform: translate(-50%, -50%); cursor: pointer; transition: all 0.2s;">🚌</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
 });
 
 const stationIcon = new L.DivIcon({
     className: 'custom-station-icon',
-    html: `<div style="background: var(--accent); width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5); transform: translate(-50%, -50%);"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    html: `<div style="background: var(--accent); width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); transform: translate(-50%, -50%);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
 });
 
 const userIcon = new L.DivIcon({
     className: 'custom-user-icon',
-    html: `<div style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px #3b82f6; border: 3px solid white; transform: translate(-50%, -50%);"><div style="background: white; width: 6px; height: 6px; border-radius: 50%;"></div></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    html: `<div style="background: #3b82f6; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); border: 2px solid white; transform: translate(-50%, -50%); animate: pulse 2s infinite;"><div style="background: white; width: 8px; height: 8px; border-radius: 50%;"></div></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
 });
 
 // Haversine distance
@@ -48,13 +48,12 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 
 const center = [28.6865, 77.5533]; // Default Sanskar College coordinate
 
-// Component to dynamically fit bounds if route changes
 function SetBounds({ route }) {
     const map = useMap();
     useEffect(() => {
         if (route && route.waypoints && route.waypoints.length > 0) {
             const bounds = L.latLngBounds(route.waypoints.map(wp => [wp.lat, wp.lng]));
-            map.fitBounds(bounds, { padding: [50, 50] });
+            map.fitBounds(bounds, { padding: [80, 80] });
         }
     }, [route, map]);
     return null;
@@ -84,65 +83,71 @@ const MapComponent = ({ selectedRouteId }) => {
         ? routes
         : routes.filter(r => r.id === selectedRouteId);
 
-    // Group active buses by route
     const activeBusesList = Object.entries(activeBuses).map(([driverId, data]) => {
         const driver = drivers.find(d => d.id === driverId);
         return { driverId, driver, ...data };
     });
 
     return (
-        <div style={{ height: '600px', width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--panel-border)' }}>
-            <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
+        <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+            <style>
+                {`
+                    @keyframes pulse {
+                        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+                        70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+                    }
+                `}
+            </style>
+            <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
                 {displayRoutes.map((route) => {
                     if (!route.waypoints || route.waypoints.length === 0) return null;
-
                     const positions = route.waypoints.map(wp => [wp.lat, wp.lng]);
 
                     return (
                         <React.Fragment key={route.id}>
-                            {/* Route Path */}
-                            <Polyline positions={positions} color="var(--primary)" weight={4} opacity={0.7} dashArray="10, 10" />
-
-                            {/* Waypoints / Stations */}
+                            <Polyline positions={positions} color="var(--primary)" weight={3} opacity={0.6} dashArray="8, 8" />
                             {route.waypoints.map((wp, idx) => (
                                 <Marker key={`${route.id}-wp-${idx}`} position={[wp.lat, wp.lng]} icon={stationIcon}>
-                                    <Popup>
-                                        <div style={{ color: 'var(--bg-dark)' }}>
-                                            <strong>{wp.name || `Stop ${idx + 1}`}</strong>
-                                            <p style={{ margin: 0, fontSize: '0.8rem' }}>Route: {route.name}</p>
+                                    <Popup className="bus-popup">
+                                        <div style={{ padding: '0.2rem' }}>
+                                            <p style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>{wp.name || `Stop ${idx + 1}`}</p>
+                                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{route.name}</p>
                                         </div>
                                     </Popup>
                                 </Marker>
                             ))}
-
                             {selectedRouteId !== 'all' && <SetBounds route={route} />}
                         </React.Fragment>
                     );
                 })}
 
-                {/* Active Buses */}
                 {activeBusesList.map((bus) => {
-                    // If we are filtering by route, don't show buses on other routes
                     if (selectedRouteId !== 'all' && bus.routeId !== selectedRouteId) return null;
 
                     return (
                         <Marker key={bus.driverId} position={[bus.lat, bus.lng]} icon={busIcon}>
-                            <Popup>
-                                <div style={{ color: 'var(--bg-dark)' }}>
-                                    <strong>{bus.driver?.busNumber || 'Unknown Bus'}</strong>
-                                    <p style={{ margin: '0.2rem 0', fontSize: '0.8rem' }}>Driver: {bus.driver?.name || bus.driverId}</p>
+                            <Popup className="bus-popup">
+                                <div style={{ padding: '0.2rem', minWidth: '150px' }}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)', margin: 0 }}>{bus.driver?.busNumber || 'Bus'}</p>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600 }}>● LIVE</span>
+                                    </div>
+                                    <p style={{ margin: '0.2rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Operator: {bus.driver?.name || 'Assigned'}</p>
+                                    
                                     {userLocation && (
-                                        <p style={{ margin: '0.2rem 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
-                                            Distance: {getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng).toFixed(2)} km
-                                        </p>
+                                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--panel-border)' }}>
+                                            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>
+                                                {getDistance(userLocation.lat, userLocation.lng, bus.lat, bus.lng).toFixed(2)} km away
+                                            </p>
+                                        </div>
                                     )}
-                                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>
-                                        Updated: {new Date(bus.updatedAt).toLocaleTimeString()}
+                                    <p style={{ marginTop: '0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                        Last signal: {new Date(bus.updatedAt).toLocaleTimeString()}
                                     </p>
                                 </div>
                             </Popup>
@@ -150,13 +155,10 @@ const MapComponent = ({ selectedRouteId }) => {
                     );
                 })}
 
-                {/* User Current Location */}
                 {userLocation && (
                     <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
-                        <Popup>
-                            <div style={{ color: 'var(--bg-dark)' }}>
-                                <strong>You are here</strong>
-                            </div>
+                        <Popup className="bus-popup">
+                            <p style={{ fontWeight: 600, margin: 0, fontSize: '0.85rem' }}>Your Location</p>
                         </Popup>
                     </Marker>
                 )}
