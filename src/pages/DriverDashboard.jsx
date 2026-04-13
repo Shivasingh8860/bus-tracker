@@ -103,7 +103,7 @@ const DriverDashboard = () => {
                 </div>
 
                 {isTracking && (
-                   <div className="mb-8 overflow-hidden fade-in" style={{ height: '350px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--panel-border)' }}>
+                   <div className="mb-8 overflow-hidden fade-in map-responsive-wrapper" style={{ maxHeight: '350px', height: '50vh', borderRadius: 'var(--radius-sm)', border: '1px solid var(--panel-border)' }}>
                        <MapComponent selectedRouteId={selectedRoute} />
                    </div>
                 )}

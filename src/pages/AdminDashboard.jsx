@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBuses } from '../context/BusesContext';
-import { Users, Route as RouteIcon, Plus, Bus, Trash2, MapPin, Search } from 'lucide-react';
+import { Users, Route as RouteIcon, Plus, Bus, Trash2, MapPin, Search, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -36,16 +36,18 @@ function MapSelector({ waypoints, setWaypoints }) {
 
 const AdminDashboard = () => {
     const { 
-        drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, 
-        routes, addRoute: handleAddRouteDB, removeRoute: handleRemoveRouteDB, 
+        drivers, addDriver: handleAddDriverDB, removeDriver: handleRemoveDriverDB, updateDriver: handleUpdateDriverDB,
+        routes, addRoute: handleAddRouteDB, removeRoute: handleRemoveRouteDB, updateRoute: handleUpdateRouteDB, 
         activeBuses,
         broadcasts, sendBroadcast: handleSendBroadcast, removeBroadcast: handleRemoveBroadcast,
         fetchHistory: handleFetchHistory
     } = useBuses();
 
     const [newDriver, setNewDriver] = useState({ id: '', name: '', busNumber: '', password: '' });
+    const [editingDriverId, setEditingDriverId] = useState(null);
     const [newRoute, setNewRoute] = useState({ id: '', name: '' });
     const [routeWaypoints, setRouteWaypoints] = useState([]);
+    const [editingRouteId, setEditingRouteId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [showHistory, setShowHistory] = useState(false);
     const [historyPoints, setHistoryPoints] = useState([]);
@@ -83,21 +85,31 @@ const AdminDashboard = () => {
         }
     };
 
-    const addDriver = (e) => {
+    const handleDriverSubmit = (e) => {
         e.preventDefault();
         if (!newDriver.id || !newDriver.name || !newDriver.busNumber || !newDriver.password) return;
-        handleAddDriverDB(newDriver);
+        if (editingDriverId) {
+            handleUpdateDriverDB({ ...newDriver, originalId: editingDriverId });
+            setEditingDriverId(null);
+        } else {
+            handleAddDriverDB(newDriver);
+        }
         setNewDriver({ id: '', name: '', busNumber: '', password: '' });
     };
 
-    const addRoute = (e) => {
+    const handleRouteSubmit = (e) => {
         e.preventDefault();
         if (!newRoute.id || !newRoute.name) return;
         if (routeWaypoints.length < 2) {
             alert("Select Start and End points on the map.");
             return;
         }
-        handleAddRouteDB({ ...newRoute, waypoints: routeWaypoints });
+        if (editingRouteId) {
+            handleUpdateRouteDB({ ...newRoute, waypoints: routeWaypoints, originalId: editingRouteId });
+            setEditingRouteId(null);
+        } else {
+            handleAddRouteDB({ ...newRoute, waypoints: routeWaypoints });
+        }
         setNewRoute({ id: '', name: '' });
         setRouteWaypoints([]);
     };
@@ -141,10 +153,10 @@ const AdminDashboard = () => {
 
             {/* Fleet Live View with Analytics */}
             <motion.div 
-                className="glass-card mb-8 overflow-hidden" 
+                className="glass-card mb-8 overflow-hidden map-responsive-wrapper" 
                 initial={{ opacity: 0, scale: 0.99 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{ height: '450px', padding: 0, position: 'relative' }}
+                style={{ padding: 0, position: 'relative' }}
             >
                 <div style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 1000 }}>
                     <div className="glass-card" style={{ padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', fontSize: '0.8rem', fontWeight: 600 }}>
@@ -167,18 +179,23 @@ const AdminDashboard = () => {
                         <h3>Drivers</h3>
                     </div>
 
-                    <form onSubmit={addDriver} className="flex flex-col gap-3 mb-8">
+                    <form onSubmit={handleDriverSubmit} className="flex flex-col gap-3 mb-8">
                         <div className="form-grid">
-                            <input type="text" placeholder="Driver ID" value={newDriver.id} onChange={e => setNewDriver({ ...newDriver, id: e.target.value })} required />
+                            <input type="text" placeholder="Driver ID" value={newDriver.id} onChange={e => setNewDriver({ ...newDriver, id: e.target.value })} required disabled={!!editingDriverId} />
                             <input type="text" placeholder="Full Name" value={newDriver.name} onChange={e => setNewDriver({ ...newDriver, name: e.target.value })} required />
                         </div>
                         <div className="form-grid">
                             <input type="text" placeholder="Bus Number" value={newDriver.busNumber} onChange={e => setNewDriver({ ...newDriver, busNumber: e.target.value })} required />
-                            <input type="password" placeholder="Password" value={newDriver.password} onChange={e => setNewDriver({ ...newDriver, password: e.target.value })} required />
+                            <input type="password" placeholder="Password" value={newDriver.password} onChange={e => setNewDriver({ ...newDriver, password: e.target.value })} required={!editingDriverId} />
                         </div>
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                            <Plus size={18} /> Register Driver
-                        </button>
+                        <div className="flex gap-2">
+                            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                                {editingDriverId ? <><Edit size={18} /> Update Driver</> : <><Plus size={18} /> Register Driver</>}
+                            </button>
+                            {editingDriverId && (
+                                <button type="button" className="btn btn-outline" onClick={() => { setEditingDriverId(null); setNewDriver({ id: '', name: '', busNumber: '', password: '' }) }}>Cancel</button>
+                            )}
+                        </div>
                     </form>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -188,9 +205,17 @@ const AdminDashboard = () => {
                                     <p style={{ fontWeight: 500, fontSize: '0.95rem' }}>{d.name}</p>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{d.id} • {d.busNumber}</p>
                                 </div>
-                                <button onClick={() => removeDriver(d.id)} className="btn btn-danger" style={{ padding: '0.4rem', borderRadius: '50%' }}>
-                                    <Trash2 size={14} />
-                                </button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => {
+                                        setEditingDriverId(d.id);
+                                        setNewDriver({ id: d.id, name: d.name, busNumber: d.busNumber, password: d.password || '' });
+                                    }} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '50%' }}>
+                                        <Edit size={14} />
+                                    </button>
+                                    <button onClick={() => removeDriver(d.id)} className="btn btn-danger" style={{ padding: '0.4rem', borderRadius: '50%' }}>
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -203,7 +228,7 @@ const AdminDashboard = () => {
                         <h3>Routes</h3>
                     </div>
 
-                    <form onSubmit={addRoute} className="flex flex-col gap-4 mb-8">
+                    <form onSubmit={handleRouteSubmit} className="flex flex-col gap-4 mb-8">
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -225,12 +250,17 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="form-grid">
-                            <input type="text" placeholder="Route ID" value={newRoute.id} onChange={e => setNewRoute({ ...newRoute, id: e.target.value })} required />
+                            <input type="text" placeholder="Route ID" value={newRoute.id} onChange={e => setNewRoute({ ...newRoute, id: e.target.value })} required disabled={!!editingRouteId} />
                             <input type="text" placeholder="Description" value={newRoute.name} onChange={e => setNewRoute({ ...newRoute, name: e.target.value })} required />
                         </div>
-                        <button type="submit" className="btn btn-outline" style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}>
-                            <Plus size={18} /> Deploy Route
-                        </button>
+                        <div className="flex gap-2">
+                            <button type="submit" className="btn btn-outline" style={{ flex: 1, border: '1px solid var(--accent)', color: 'var(--accent)' }}>
+                                {editingRouteId ? <><Edit size={18} /> Update Route</> : <><Plus size={18} /> Deploy Route</>}
+                            </button>
+                            {editingRouteId && (
+                                <button type="button" className="btn btn-outline" onClick={() => { setEditingRouteId(null); setNewRoute({ id: '', name: '' }); setRouteWaypoints([]); }}>Cancel</button>
+                            )}
+                        </div>
                     </form>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -240,9 +270,18 @@ const AdminDashboard = () => {
                                     <p style={{ fontWeight: 500, fontSize: '0.95rem' }}>{r.name}</p>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{r.id} • {r.waypoints?.length || 0} nodes</p>
                                 </div>
-                                <button onClick={() => removeRoute(r.id)} className="btn btn-danger" style={{ padding: '0.4rem', borderRadius: '50%' }}>
-                                    <Trash2 size={14} />
-                                </button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => {
+                                        setEditingRouteId(r.id);
+                                        setNewRoute({ id: r.id, name: r.name });
+                                        setRouteWaypoints(r.waypoints ? [...r.waypoints] : []);
+                                    }} className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '50%' }}>
+                                        <Edit size={14} />
+                                    </button>
+                                    <button onClick={() => removeRoute(r.id)} className="btn btn-danger" style={{ padding: '0.4rem', borderRadius: '50%' }}>
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

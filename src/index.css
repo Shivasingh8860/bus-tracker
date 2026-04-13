@@ -214,6 +214,27 @@ input::placeholder {
     .glass-card { padding: 1rem; }
 }
 
+/* Map Responsive Wrappers */
+.map-responsive-wrapper {
+  height: 60vh;
+  min-height: 400px;
+  max-height: 600px;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .map-responsive-wrapper {
+    height: 50vh;
+    min-height: 300px;
+  }
+}
+
+/* Ensure Leaflet Maps respect border radius */
+.leaflet-container {
+  border-radius: inherit !important;
+  z-index: 1; /* Fix for overflow hidden ignoring border-radius on transform */
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;

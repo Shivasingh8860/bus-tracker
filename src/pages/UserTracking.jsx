@@ -67,10 +67,10 @@ const UserTracking = () => {
 
             <div className="layout-sidebar">
                 <motion.div
-                    className="overflow-hidden shadow-2xl"
+                    className="overflow-hidden shadow-2xl map-responsive-wrapper"
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={{ borderRadius: 'var(--radius-md)', minHeight: '600px', border: '1px solid var(--panel-border)' }}
+                    style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--panel-border)' }}
                 >
                     <MapComponent 
                         selectedRouteId={selectedRoute} 

@@ -168,6 +168,32 @@ export const BusesProvider = ({ children }) => {
         }
     };
 
+    const updateDriverToDB = async (driver) => {
+        const payload = {
+            id: driver.id,
+            name: driver.name,
+            busnumber: driver.busNumber,
+            password: driver.password
+        };
+        const { error } = await supabase.from('drivers').update(payload).eq('id', driver.id);
+        if (!error) {
+            setDrivers(prev => prev.map(d => d.id === driver.id ? driver : d));
+        } else {
+            console.error("Error updating driver in Supabase:", error);
+            alert("Database Error! Failed to update driver.");
+        }
+    };
+
+    const updateRouteToDB = async (route) => {
+        const { error } = await supabase.from('routes').update(route).eq('id', route.id);
+        if (!error) {
+            setRoutes(prev => prev.map(r => r.id === route.id ? route : r));
+        } else {
+            console.error("Error updating route in Supabase:", error);
+            alert("Database Error! Failed to update route.");
+        }
+    };
+
     const updateBusLocation = async (driverId, lat, lng, routeId, crowdStatus = 'Empty') => {
         const now = Date.now();
         
@@ -259,9 +285,8 @@ export const BusesProvider = ({ children }) => {
 
     return (
         <BusesContext.Provider value={{
-            routes, addRoute: addRouteToDB, removeRoute: removeRouteFromDB,
-            drivers, addDriver: addDriverToDB,
-            removeDriver: removeDriverFromDB,
+            routes, addRoute: addRouteToDB, removeRoute: removeRouteFromDB, updateRoute: updateRouteToDB,
+            drivers, addDriver: addDriverToDB, removeDriver: removeDriverFromDB, updateDriver: updateDriverToDB,
             activeBuses, updateBusLocation, stopBusTracking,
             broadcasts, sendBroadcast, removeBroadcast,
             fetchHistory,
